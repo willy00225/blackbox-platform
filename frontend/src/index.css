@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-carbon: #050505;
+  --color-deepblack: #111111;
+  --color-gold: #C5A059;
+  --color-crimson: #E50914;
+  --color-offwhite: #F3F4F6;
+  --color-grayish: #9CA3AF;
+  --font-display: "Montserrat", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --shadow-glow-red: 0 0 15px rgba(229, 9, 20, 0.5);
+  --shadow-glow-gold: 0 0 10px rgba(197, 160, 89, 0.4);
+}
+
+body {
+  background-color: var(--color-carbon);
+  color: var(--color-offwhite);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #111111;
+}
+::-webkit-scrollbar-thumb {
+  background: #C5A059;
+  border-radius: 10px;
+}
+
+/* Ajout pour le lecteur vertical (TikTok) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Correction du bug "100vh" (bas de page coupé sur iPhone) */
+html, body, #root {
+  height: 100%;
+  min-height: 100dvh; /* dvh = dynamic viewport height (le standard pour mobile) */
+}
