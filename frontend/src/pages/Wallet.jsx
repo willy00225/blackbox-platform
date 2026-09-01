@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Coins, Wallet as WalletIcon, CreditCard, Smartphone } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Wallet = ({ user, onCoinsUpdate }) => {
   const [packs, setPacks] = useState([]);
   const [phone, setPhone] = useState('');
@@ -8,7 +10,7 @@ const Wallet = ({ user, onCoinsUpdate }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/api/payments/packs')
+    fetch(`${API_URL}/api/payments/packs`)
       .then(res => res.json())
       .then(setPacks)
       .catch(err => console.error("Erreur chargement packs", err)); // ✅ Ajout du catch
@@ -17,10 +19,10 @@ const Wallet = ({ user, onCoinsUpdate }) => {
   const handlePurchase = async (pack) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/payments/initiate', {
+      const res = await fetch(`${API_URL}/api/payments/initiate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, amount: pack.price, phone })
+        body: JSON.stringify({ userId: user.id, amount: pack.price, phone, method })
       });
 
       if (!res.ok) {
@@ -60,7 +62,7 @@ const Wallet = ({ user, onCoinsUpdate }) => {
       {/* Méthodes de paiement */}
       <div className="mb-6">
         <h2 className="text-xl font-bold mb-4">Choisir le mode de paiement</h2>
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <button onClick={() => setMethod('wave')} className={`p-4 rounded-lg border ${method === 'wave' ? 'border-gold bg-gold/10' : 'border-gray-700 bg-deepblack'}`}>
             <Smartphone className="w-6 h-6 text-blue-400" /> Wave
           </button>
@@ -96,7 +98,7 @@ const Wallet = ({ user, onCoinsUpdate }) => {
             <button 
               onClick={() => handlePurchase(pack)}
               disabled={loading}
-              className="w-full py-2 bg-crimson hover:bg-red-700 text-white font-bold rounded-lg transition"
+              className="w-full py-2 bg-crimson hover:bg-red-700 text-white font-bold rounded-lg transition disabled:opacity-50"
             >
               {loading ? 'Traitement...' : 'Acheter'}
             </button>

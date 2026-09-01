@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import logo from '../assets/logo.png';
 
 const SplashScreen = ({ onFinish }) => {
   const [progress, setProgress] = useState(0);
@@ -40,12 +41,16 @@ const SplashScreen = ({ onFinish }) => {
       {/* Logo avec effet "Scan" */}
       <div className="relative flex flex-col items-center">
         <motion.img
-          src="/src/assets/logo.png"
+          src={logo}
           alt="Black Box"
           initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
           transition={{ duration: 1, ease: "easeOut" }}
           className="w-32 md:w-40 object-contain drop-shadow-[0_0_25px_rgba(197,160,89,0.6)]"
+          loading="eager"
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
         />
 
         {/* Trait de lumière qui traverse le logo */}

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, ShieldCheck, KeyRound } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Auth = ({ onAuth, onBack }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -52,7 +54,7 @@ const Auth = ({ onAuth, onBack }) => {
 
     setLoading(true);
     try {
-      const url = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const url = isLogin ? `${API_URL}/api/auth/login` : `${API_URL}/api/auth/register`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,17 +87,16 @@ const Auth = ({ onAuth, onBack }) => {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/forgot-password', {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail })
       });
       const data = await res.json();
       if (res.ok) {
-        // En mode démo, on affiche le code renvoyé (à retirer en production)
         setSuccess(data.message || 'Code envoyé par email.');
         if (data.debugCode) {
-          setResetCode(data.debugCode); // pour tester sans SMTP
+          setResetCode(data.debugCode);
         }
         setForgotStep(2);
       } else {
@@ -119,7 +120,7 @@ const Auth = ({ onAuth, onBack }) => {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/verify-reset-code', {
+      const res = await fetch(`${API_URL}/api/auth/verify-reset-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail, code: resetCode })
@@ -154,7 +155,7 @@ const Auth = ({ onAuth, onBack }) => {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/reset-password', {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail, code: resetCode, newPassword })
@@ -162,7 +163,6 @@ const Auth = ({ onAuth, onBack }) => {
       const data = await res.json();
       if (res.ok) {
         setSuccess('Mot de passe réinitialisé. Vous pouvez vous connecter.');
-        // Fermer le flux de récupération
         setTimeout(() => {
           setForgotStep(0);
           setForgotEmail('');
@@ -204,15 +204,18 @@ const Auth = ({ onAuth, onBack }) => {
         transition={{ duration: 0.5 }}
         className="relative z-10 bg-deepblack p-8 md:p-10 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl"
       >
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gold">🎬 Black Box</h1>
-          <p className="text-gray-500 text-sm mt-2">
-            {isLogin ? 'Connexion à votre compte' : 'Créer un nouveau compte'}
-          </p>
+        {/* ✅ Logo ajouté avant le titre */}
+        <div className="flex justify-center mb-6">
+          <img src="/src/assets/logo.png" alt="Black Box" className="h-16 w-auto object-contain" />
         </div>
 
-        {/* Navigation Connexion / Inscription (si pas en mode forgot) */}
+        {/* Titre sans émoji */}
+        <h1 className="text-3xl font-bold text-center mb-2 text-gold">Black Box</h1>
+        <p className="text-gray-500 text-sm text-center mb-8">
+          {isLogin ? 'Connexion à votre compte' : 'Créer un nouveau compte'}
+        </p>
+
+        {/* Navigation Connexion / Inscription */}
         {forgotStep === 0 && (
           <>
             <div className="flex mb-6 bg-carbon rounded-lg p-1">

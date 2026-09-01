@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import Hls from 'hls.js'; // ✅ AJOUTÉ
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialIndex = 0 }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -99,8 +101,8 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
 
     if (currentVideo?.id) {
       const likesUrl = safeUser
-        ? `/api/video/${currentVideo.id}/likes?userId=${safeUser.id}`
-        : `/api/video/${currentVideo.id}/likes`;
+        ? `${API_URL}/api/video/${currentVideo.id}/likes?userId=${safeUser.id}`
+        : `${API_URL}/api/video/${currentVideo.id}/likes`;
 
       fetch(likesUrl)
         .then(res => res.json())
@@ -113,7 +115,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
           setLikesCount(0);
         });
 
-      fetch(`/api/video/${currentVideo.id}/comments`)
+      fetch(`${API_URL}/api/video/${currentVideo.id}/comments`)
         .then(res => res.json())
         .then(data => setComments(Array.isArray(data) ? data : []))
         .catch(err => {
@@ -278,7 +280,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
       alert("Connectez-vous pour aimer.");
       return;
     }
-    const res = await fetch('/api/like', {
+    const res = await fetch(`${API_URL}/api/like`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: safeUser.id, videoId: currentVideo.id })
@@ -290,7 +292,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
 
   const handleComment = async () => {
     if (!safeUser || !newComment.trim()) return;
-    const res = await fetch(`/api/video/${currentVideo.id}/comments`, {
+    const res = await fetch(`${API_URL}/api/video/${currentVideo.id}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: safeUser.id, content: newComment })
@@ -311,7 +313,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
       return;
     }
     try {
-      const res = await fetch(`/api/ads/available?userId=${safeUser.id}`);
+      const res = await fetch(`${API_URL}/api/ads/available?userId=${safeUser.id}`);
       const data = await res.json();
       if (data.ad) {
         setAvailableAd(data.ad);
@@ -328,7 +330,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
   const handleAdCompleted = async () => {
     if (!availableAd || !safeUser) return;
     try {
-      const res = await fetch('/api/ads/watch', {
+      const res = await fetch(`${API_URL}/api/ads/watch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: safeUser.id, adId: availableAd.id })

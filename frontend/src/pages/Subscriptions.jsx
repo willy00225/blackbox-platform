@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Check, Crown, Star, Users, Loader2, Shield, Zap, Film, Gift, BadgeCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Subscriptions = ({ user, onUserUpdate }) => {
   const [plans, setPlans] = useState([]);
   const [currentStatus, setCurrentStatus] = useState(null);
@@ -12,8 +14,8 @@ const Subscriptions = ({ user, onUserUpdate }) => {
     const fetchData = async () => {
       try {
         const [plansRes, statusRes] = await Promise.all([
-          fetch('/api/subscriptions/plans'),
-          user?.id ? fetch(`/api/subscriptions/status/${user.id}`) : Promise.resolve(null)
+          fetch(`${API_URL}/api/subscriptions/plans`),
+          user?.id ? fetch(`${API_URL}/api/subscriptions/status/${user.id}`) : Promise.resolve(null)
         ]);
 
         if (plansRes.ok) {
@@ -38,7 +40,7 @@ const Subscriptions = ({ user, onUserUpdate }) => {
   const handleSubscribe = async (planId) => {
     setSubscribing(planId);
     try {
-      const res = await fetch('/api/subscriptions/subscribe', {
+      const res = await fetch(`${API_URL}/api/subscriptions/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, planId })
@@ -66,7 +68,7 @@ const Subscriptions = ({ user, onUserUpdate }) => {
   const handleCancel = async () => {
     if (!window.confirm('Voulez-vous vraiment annuler votre abonnement ?')) return;
     try {
-      const res = await fetch('/api/subscriptions/cancel', {
+      const res = await fetch(`${API_URL}/api/subscriptions/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id })

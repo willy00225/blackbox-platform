@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const StarRating = ({ user, film }) => {
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -12,7 +14,7 @@ const StarRating = ({ user, film }) => {
     if (!user || !film) return;
     const fetchRating = async () => {
       try {
-        const res = await fetch(`/api/ratings?userId=${user.id}&filmId=${film.id}`);
+        const res = await fetch(`${API_URL}/api/ratings?userId=${user.id}&filmId=${film.id}`);
         if (res.ok) {
           const data = await res.json();
           setUserRating(data.stars || 0);
@@ -31,7 +33,7 @@ const StarRating = ({ user, film }) => {
     if (!user) return;
     setSubmitting(true);
     try {
-      await fetch('/api/ratings', {
+      await fetch(`${API_URL}/api/ratings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, filmId: film.id, stars })

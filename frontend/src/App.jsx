@@ -8,6 +8,8 @@ import SplashScreen from './components/SplashScreen';
 import SearchPage from './pages/Search';
 import Subscriptions from './pages/Subscriptions'; // ✅ Import de la page Abonnements
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 // Lazy loading des composants lourds
 const FilmDetail = lazy(() => import('./components/FilmDetail'));
 const VideoPlayer = lazy(() => import('./components/VideoPlayer'));
@@ -65,7 +67,7 @@ function UserApp() {
     const storedUser = localStorage.getItem('user');
 
     if (token && storedUser) {
-      fetch('/api/auth/me', {
+      fetch(`${API_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => {
@@ -89,7 +91,7 @@ function UserApp() {
         });
     }
 
-    fetch('/api/videos')
+    fetch(`${API_URL}/api/videos`)
       .then(res => res.json())
       .then(data => setFilms(data))
       .catch(err => console.error(err));
@@ -112,7 +114,7 @@ function UserApp() {
 
   const saveCoinsToBackend = async (newCoins) => {
     if (!user) return;
-    await fetch('/api/auth/update-coins', {
+    await fetch(`${API_URL}/api/auth/update-coins`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, coins: newCoins })

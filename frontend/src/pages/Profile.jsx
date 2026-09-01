@@ -7,6 +7,8 @@ import {
   Save, X
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
   const [referralData, setReferralData] = useState({ referralLink: '', referralsCount: 0 });
   const [history, setHistory] = useState([]);
@@ -32,7 +34,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     }
 
     // Parrainage
-    fetch(`/api/referral/${user.id}`)
+    fetch(`${API_URL}/api/referral/${user.id}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.referralLink) {
@@ -43,8 +45,8 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
 
     // Historique et watchlist
     Promise.all([
-      fetch(`/api/history?userId=${user.id}`),
-      fetch(`/api/watchlist?userId=${user.id}`)
+      fetch(`${API_URL}/api/history?userId=${user.id}`),
+      fetch(`${API_URL}/api/watchlist?userId=${user.id}`)
     ])
       .then(([historyRes, watchlistRes]) => Promise.all([historyRes.json(), watchlistRes.json()]))
       .then(([historyData, watchlistData]) => {
@@ -67,7 +69,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return showMessage('Token manquant, reconnectez-vous', 'error');
-      const res = await fetch('/api/profile', {
+      const res = await fetch(`${API_URL}/api/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ name, email })
@@ -89,7 +91,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return showMessage('Token manquant, reconnectez-vous', 'error');
-      const res = await fetch('/api/profile/password', {
+      const res = await fetch(`${API_URL}/api/profile/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ currentPassword, newPassword })
@@ -111,7 +113,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return showMessage('Token manquant, reconnectez-vous', 'error');
-      const res = await fetch('/api/profile/preferences', {
+      const res = await fetch(`${API_URL}/api/profile/preferences`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ language, videoQuality, notificationsEnabled })
@@ -132,7 +134,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
         onLogout();
         return;
       }
-      const res = await fetch('/api/profile/logout-all', {
+      const res = await fetch(`${API_URL}/api/profile/logout-all`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -163,7 +165,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
 
   const removeFromWatchlist = async (watchlistItemId) => {
     try {
-      await fetch(`/api/watchlist/${watchlistItemId}`, { method: 'DELETE' });
+      await fetch(`${API_URL}/api/watchlist/${watchlistItemId}`, { method: 'DELETE' });
       setWatchlist(prev => prev.filter(item => item.id !== watchlistItemId));
     } catch (error) {
       console.error("Erreur suppression", error);

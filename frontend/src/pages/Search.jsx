@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, X, Film, Tv, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -36,7 +38,7 @@ const SearchPage = () => {
 
   // Charger les genres disponibles (pour les filtres)
   useEffect(() => {
-    fetch('/api/genres')
+    fetch(`${API_URL}/api/genres`)
       .then(res => res.json())
       .then(data => setGenres(Array.isArray(data) ? data : []))
       .catch(err => console.error('Erreur genres', err));
@@ -53,7 +55,7 @@ const SearchPage = () => {
     params.append('limit', resultsPerPage);
 
     setLoading(true);
-    fetch(`/api/videos?${params.toString()}`)
+    fetch(`${API_URL}/api/videos?${params.toString()}`)
       .then(res => res.json())
       .then(data => {
         // Si l'API renvoie un tableau simple, on gère la pagination côté client

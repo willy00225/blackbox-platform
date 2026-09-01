@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Star, Play, Plus, ArrowLeft, Loader2, Check, User, Users, Calendar, Clock, Clapperboard, Trophy, Monitor, Film, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }) => {
   const [userRating, setUserRating] = useState(0);
   const [loadingRating, setLoadingRating] = useState(true);
@@ -13,7 +15,7 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
     if (currentUser) {
-      fetch(`/api/ratings/${currentUser.id}/${film.id}`)
+      fetch(`${API_URL}/api/ratings/${currentUser.id}/${film.id}`)
         .then(res => res.json())
         .then(data => {
           setUserRating(data.stars || 0);
@@ -30,7 +32,7 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
     // Si c'est une série, charger les épisodes
     if (film.category === 'serie') {
       setLoadingEpisodes(true);
-      fetch('/api/videos')
+      fetch(`${API_URL}/api/videos`)
         .then(res => res.json())
         .then(videos => {
           const seriesEpisodes = videos.filter(v => 
@@ -54,7 +56,7 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
     
     setUserRating(stars);
     try {
-      await fetch('/api/ratings', {
+      await fetch(`${API_URL}/api/ratings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser.id, filmId: film.id, stars })
@@ -70,7 +72,7 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
     if (!currentUser) return showToast("❌ Connectez-vous");
 
     try {
-      const res = await fetch('/api/watchlist', {
+      const res = await fetch(`${API_URL}/api/watchlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser.id, filmId: film.id })

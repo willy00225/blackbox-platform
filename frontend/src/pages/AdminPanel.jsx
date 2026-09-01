@@ -96,7 +96,7 @@ class ErrorBoundary extends Component {
 
 const AdminPanel = ({ token, onLogout }) => {
   const navigate = useNavigate();
-  const API_URL = 'http://localhost:5000';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   
   const [data, setData] = useState({
     stats: { totalUsers: 0, totalVideos: 0, totalRatings: 0, totalHistory: 0 },
