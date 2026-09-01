@@ -140,9 +140,16 @@ app.get('/api/genres', async (req, res) => {
 });
 
 // ========== ROUTES ADMIN ==========
-app.post('/api/admin/login', (req, res) => {
+// Limiteur spécifique pour le login admin (3 tentatives max / 15 min)
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Maximum 3 tentatives
+  message: "Trop de tentatives. Accès bloqué pour 15 minutes."
+});
+
+app.post('/api/admin/login', adminLoginLimiter, async (req, res) => {
   const { password } = req.body;
-  if (password === 'BlackBox2026') {
+  if (password === process.env.ADMIN_PASSWORD) {
     const token = jwt.sign({ id: 1 }, SECRET, { expiresIn: '7d' });
     res.json({ success: true, token });
   } else {
