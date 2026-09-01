@@ -12,7 +12,7 @@ const Auth = ({ onAuth, onBack }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   // State pour "Mot de passe oublié"
-  const [forgotStep, setForgotStep] = useState(0); // 0 = fermé, 1 = email, 2 = code, 3 = nouveau mdp
+  const [forgotStep, setForgotStep] = useState(0);
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -23,7 +23,6 @@ const Auth = ({ onAuth, onBack }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Validation du mot de passe (6+ caractères, au moins 1 chiffre)
   const validatePassword = (pwd) => {
     if (pwd.length < 6) return 'Le mot de passe doit contenir au moins 6 caractères.';
     if (!/\d/.test(pwd)) return 'Le mot de passe doit contenir au moins un chiffre.';
@@ -76,7 +75,6 @@ const Auth = ({ onAuth, onBack }) => {
     }
   };
 
-  // Étape 1 : envoyer le code de récupération
   const handleSendResetCode = async (e) => {
     e.preventDefault();
     setError('');
@@ -109,7 +107,6 @@ const Auth = ({ onAuth, onBack }) => {
     }
   };
 
-  // Étape 2 : vérifier le code
   const handleVerifyResetCode = async (e) => {
     e.preventDefault();
     setError('');
@@ -139,7 +136,6 @@ const Auth = ({ onAuth, onBack }) => {
     }
   };
 
-  // Étape 3 : définir le nouveau mot de passe
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError('');
@@ -204,18 +200,16 @@ const Auth = ({ onAuth, onBack }) => {
         transition={{ duration: 0.5 }}
         className="relative z-10 bg-deepblack p-8 md:p-10 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl"
       >
-        {/* ✅ Logo ajouté avant le titre */}
+        {/* ✅ Logo - CHEMIN CORRIGÉ */}
         <div className="flex justify-center mb-6">
-          <img src="/src/assets/logo.png" alt="Black Box" className="h-16 w-auto object-contain" />
+          <img src="/assets/logo.png" alt="Black Box" className="h-16 w-auto object-contain" />
         </div>
 
-        {/* Titre sans émoji */}
         <h1 className="text-3xl font-bold text-center mb-2 text-gold">Black Box</h1>
         <p className="text-gray-500 text-sm text-center mb-8">
           {isLogin ? 'Connexion à votre compte' : 'Créer un nouveau compte'}
         </p>
 
-        {/* Navigation Connexion / Inscription */}
         {forgotStep === 0 && (
           <>
             <div className="flex mb-6 bg-carbon rounded-lg p-1">
@@ -333,7 +327,6 @@ const Auth = ({ onAuth, onBack }) => {
           </>
         )}
 
-        {/* Flux "Mot de passe oublié" */}
         {forgotStep === 1 && (
           <div className="space-y-5">
             <h2 className="text-xl font-semibold text-center">Récupérer votre mot de passe</h2>
@@ -428,7 +421,6 @@ const Auth = ({ onAuth, onBack }) => {
           </div>
         )}
 
-        {/* Bouton retour à l'accueil */}
         <div className="mt-6 pt-4 border-t border-gray-800">
           <button onClick={onBack} className="w-full text-xs text-gray-600 hover:text-gray-400 transition text-center">
             ← Retour à l'accueil

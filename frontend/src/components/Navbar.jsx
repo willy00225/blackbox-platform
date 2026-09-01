@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Home, Search, Library, User, Coins, LogOut } from 'lucide-react';
-import logo from '../assets/logo.png';
 
 const Navbar = ({ user, userCoins, onLogout, onProfileClick, onLogoClick, onSearchClick }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -40,7 +39,7 @@ const Navbar = ({ user, userCoins, onLogout, onProfileClick, onLogoClick, onSear
             <Menu className="w-6 h-6" />
           </button>
 
-          {/* Logo (cliquable pour retour accueil) */}
+          {/* ✅ Logo - CHEMIN CORRIGÉ */}
           <Link 
             to="/" 
             onClick={handleLogoClick} 
@@ -48,7 +47,7 @@ const Navbar = ({ user, userCoins, onLogout, onProfileClick, onLogoClick, onSear
             aria-label="Retour à l'accueil"
           >
             <img 
-              src={logo} 
+              src="/assets/logo.png" 
               alt="Black Box" 
               className="h-8 w-auto object-contain" 
               loading="eager"
@@ -141,8 +140,9 @@ const Navbar = ({ user, userCoins, onLogout, onProfileClick, onLogoClick, onSear
           {/* Panneau Latéral */}
           <div className="absolute left-0 top-0 bottom-0 w-72 bg-deepblack border-r border-gray-800 p-6 flex flex-col overflow-y-auto">
             <div className="flex justify-between items-center mb-8">
+              {/* ✅ Logo - CHEMIN CORRIGÉ */}
               <img 
-                src={logo} 
+                src="/assets/logo.png" 
                 alt="Black Box" 
                 className="h-8 w-auto" 
                 loading="eager"

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import logo from '../assets/logo.png';
 
 const SplashScreen = ({ onFinish }) => {
   const [progress, setProgress] = useState(0);
@@ -38,10 +37,10 @@ const SplashScreen = ({ onFinish }) => {
       <div className="absolute w-[500px] h-[500px] rounded-full bg-crimson/20 blur-[120px] opacity-30"></div>
       <div className="absolute w-[300px] h-[300px] rounded-full bg-gold/20 blur-[100px] opacity-20 mt-32"></div>
 
-      {/* Logo avec effet "Scan" */}
+      {/* ✅ Logo avec effet "Scan" - CHEMIN CORRIGÉ */}
       <div className="relative flex flex-col items-center">
         <motion.img
-          src={logo}
+          src="/assets/logo.png"
           alt="Black Box"
           initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
