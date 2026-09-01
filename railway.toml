@@ -1,6 +1,7 @@
 [build]
 builder = "NIXPACKS"
 buildCommand = "npm install"
+nixpacksVersion = "20"   # <-- On force Node 20
 
 [deploy]
 startCommand = "node server.js"
