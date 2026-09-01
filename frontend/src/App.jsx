@@ -476,7 +476,7 @@ function App() {
           <Route path="/ma-liste" element={<UserApp />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/abonnements" element={<Subscriptions />} /> {/* ✅ Route ajoutée */}
-          <Route path="/admin" element={<AdminApp />} />
+          <Route path="/secure-panel-2026" element={<AdminApp />} /> {/* ✅ Route admin obscurcie */}
         </Routes>
       </Suspense>
     </Router>
