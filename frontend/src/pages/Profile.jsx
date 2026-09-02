@@ -7,7 +7,7 @@ import {
   Save, X
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
 const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
   const [referralData, setReferralData] = useState({ referralLink: '', referralsCount: 0 });

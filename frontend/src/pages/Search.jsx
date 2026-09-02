@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, X, Film, Tv, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
