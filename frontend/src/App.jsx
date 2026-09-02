@@ -8,7 +8,7 @@ import SplashScreen from './components/SplashScreen';
 import SearchPage from './pages/Search';
 import Subscriptions from './pages/Subscriptions'; // ✅ Import de la page Abonnements
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
 // Lazy loading des composants lourds
 const FilmDetail = lazy(() => import('./components/FilmDetail'));

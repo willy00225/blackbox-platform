@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, ShieldCheck, KeyRound } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
 const Auth = ({ onAuth, onBack }) => {
   const [isLogin, setIsLogin] = useState(true);
