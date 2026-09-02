@@ -1,11 +1,20 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+// Connexion à la base (Railway ou local)
 let sequelize;
 if (process.env.DATABASE_URL) {
-    sequelize = new Sequelize(process.env.DATABASE_URL, { dialect: 'postgres', logging: false, dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } });
+    sequelize = new Sequelize(process.env.DATABASE_URL, { 
+        dialect: 'postgres', 
+        logging: false, 
+        dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } 
+    });
 } else {
-    sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, { host: process.env.DB_HOST, dialect: 'postgres', logging: false });
+    sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, { 
+        host: process.env.DB_HOST, 
+        dialect: 'postgres', 
+        logging: false 
+    });
 }
 
 const { DataTypes } = require('sequelize');
@@ -39,59 +48,70 @@ const Video = sequelize.define('Video', {
     console.log('🗑️ Anciennes vidéos supprimées.');
 
     const data = [
-        // ========== FILMS ==========
+        // ========== FILMS (MP4 Domaine Public - Internet Archive) ==========
         {
-            title: 'Les Racines de l\'Or', description: 'Une saga familiale entre tradition et modernité dans les rues d\'Abidjan.', category: 'film', duration: '1h45', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600', year: 2026, genre: 'Drame', casting: 'Aïcha Koné, Jean-Marc Koffi', director: 'Fatou Diop', rating: 8.7, coinsRequired: 0, featured: true, quality: 'HD', language: 'FR'
+            title: 'La Petite Boutique des Horreurs', description: 'Un classique du cinéma d\'horreur des années 60, passé dans le domaine public.', category: 'film', duration: '1h12', 
+            url: 'https://ia800509.us.archive.org/20/items/TheLittleShopOfHorrors1960_765/TheLittleShopOfHorrors1960.mp4', 
+            poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600', 
+            year: 1960, genre: 'Horreur', casting: 'Jonathan Haze, Jackie Joseph', director: 'Roger Corman', rating: 7.2, coinsRequired: 0, featured: true, quality: 'HD'
         },
         {
-            title: 'Cœur de Ville', description: 'Un jeune entrepreneur ambitieux doit choisir entre l\'amour et le pouvoir.', category: 'film', duration: '1h50', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', poster: 'https://images.unsplash.com/photo-1516280440614-669728d5a48c?w=600', year: 2025, genre: 'Romance', casting: 'Moussa Traoré, Awa Diallo', director: 'Kader Sy', rating: 7.9, coinsRequired: 5, quality: 'HD', language: 'FR'
+            title: 'At War with the Army', description: 'Une comédie militaire mettant en scène les débuts de Jerry Lewis.', category: 'film', duration: '1h33', 
+            url: 'https://ia601609.us.archive.org/28/items/AtWarWithTheArmy/AtWarWithTheArmy_512kb.mp4', 
+            poster: 'https://images.unsplash.com/photo-1516280440614-669728d5a48c?w=600', 
+            year: 1950, genre: 'Comédie', casting: 'Dean Martin, Jerry Lewis', director: 'Hal Walker', rating: 6.5, coinsRequired: 5, quality: 'HD'
         },
         {
-            title: 'Lueur d\'Espoir', description: 'Le combat d\'une femme pour sauver son quartier de la corruption.', category: 'film', duration: '2h05', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', poster: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600', year: 2024, genre: 'Thriller', casting: 'Mariam Sanogo, Issa Ouattara', director: 'Salif Keita', rating: 8.2, coinsRequired: 10, quality: 'HD', language: 'FR'
+            title: 'Horrors of Spider Island', description: 'Un thriller de science-fiction avec des effets spéciaux mémorables.', category: 'film', duration: '1h15', 
+            url: 'https://ia801608.us.archive.org/3/items/Horrors_of_Spider_Island/Horrors_of_Spider_Island.mp4', 
+            poster: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600', 
+            year: 1960, genre: 'Science-Fiction', casting: 'Harald Maresch, Helga Franck', director: 'Fritz Böttger', rating: 5.8, coinsRequired: 10, quality: 'HD'
         },
         {
-            title: 'Le Prix de la Gloire', description: 'Un footballeur talentueux doit faire face aux compromis du monde professionnel.', category: 'film', duration: '1h38', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', poster: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600', year: 2023, genre: 'Sport', casting: 'Yves Kouassi, Grace Bamba', director: 'Nadia Ben', rating: 8.0, coinsRequired: 0, quality: 'HD', language: 'FR'
-        },
-        {
-            title: 'Sables Sacrés', description: 'Un anthropologue découvre un secret enfoui dans le désert.', category: 'film', duration: '1h55', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4', poster: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600', year: 2022, genre: 'Aventure', casting: 'Kofi Mensah, Awa Diallo', director: 'Ibrahim Cissé', rating: 8.4, coinsRequired: 5, quality: 'HD', language: 'FR'
-        },
-
-        // ========== SÉRIES : ABIDJAN CHIC ==========
-        {
-            title: 'Abidjan Chic', description: 'La vie glamour et impitoyable des influenceurs de la capitale.', category: 'serie', episodeNumber: 1, seasonNumber: 1, duration: '1:30', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', poster: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600', year: 2026, genre: 'Drame urbain', casting: 'Grace Bamba, Yves Kouassi', director: 'Nadia Ben', rating: 8.9, coinsRequired: 0, quality: 'HD', language: 'FR'
-        },
-        {
-            title: 'Abidjan Chic', description: 'Un contrat volé met en danger l\'entreprise familiale.', category: 'serie', episodeNumber: 2, seasonNumber: 1, duration: '1:20', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', poster: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600', year: 2026, genre: 'Drame urbain', casting: 'Grace Bamba, Yves Kouassi', director: 'Nadia Ben', rating: 8.9, coinsRequired: 5, quality: 'HD', language: 'FR'
-        },
-        {
-            title: 'Abidjan Chic', description: 'Une trahison amoureuse bouleverse les alliances.', category: 'serie', episodeNumber: 3, seasonNumber: 1, duration: '1:25', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', poster: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600', year: 2026, genre: 'Drame urbain', casting: 'Grace Bamba, Yves Kouassi', director: 'Nadia Ben', rating: 8.8, coinsRequired: 5, quality: 'HD', language: 'FR'
+            title: 'Snowbeast', description: 'Une créature mystérieuse rôde dans les montagnes enneigées.', category: 'film', duration: '1h31', 
+            url: 'https://ia801303.us.archive.org/30/items/Snowbeast_436/MoviePowderPresentsSnowbeast_512kb.mp4', 
+            poster: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600', 
+            year: 1977, genre: 'Horreur', casting: 'Bo Svenson, Yvette Mimieux', director: 'Herb Wallerstein', rating: 6.0, coinsRequired: 5, quality: 'HD'
         },
 
-        // ========== SÉRIES : THRILLER DE QUARTIER ==========
+        // ========== SÉRIES (Flux HLS Blender - Stable) ==========
         {
-            title: 'Thriller de Quartier', description: 'Un coup de feu dans la nuit, une dette à payer.', category: 'serie', episodeNumber: 1, seasonNumber: 1, duration: '1:40', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', poster: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600', year: 2025, genre: 'Suspense', casting: 'Moussa Kone, Fatou Bamba', director: 'Ibrahim Cissé', rating: 9.1, coinsRequired: 0, quality: 'HD', language: 'FR'
+            title: 'Abidjan Chic', description: 'La vie glamour et impitoyable des influenceurs de la capitale.', category: 'serie', episodeNumber: 1, seasonNumber: 1, duration: '1:30', 
+            url: 'https://ireplay.tv/test/hd_blender.m3u8', 
+            poster: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600', 
+            year: 2026, genre: 'Drame urbain', casting: 'Grace Bamba, Yves Kouassi', director: 'Nadia Ben', rating: 8.9, coinsRequired: 0, quality: 'HD'
         },
         {
-            title: 'Thriller de Quartier', description: 'Le héros est traqué dans une ruelle sans issue.', category: 'serie', episodeNumber: 2, seasonNumber: 1, duration: '1:30', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', poster: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600', year: 2025, genre: 'Suspense', casting: 'Moussa Kone, Fatou Bamba', director: 'Ibrahim Cissé', rating: 9.1, coinsRequired: 7, quality: 'HD', language: 'FR'
+            title: 'Abidjan Chic', description: 'Un contrat volé met en danger l\'entreprise familiale.', category: 'serie', episodeNumber: 2, seasonNumber: 1, duration: '1:20', 
+            url: 'https://ireplay.tv/test/hd_blender.m3u8', 
+            poster: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600', 
+            year: 2026, genre: 'Drame urbain', casting: 'Grace Bamba, Yves Kouassi', director: 'Nadia Ben', rating: 8.9, coinsRequired: 5, quality: 'HD'
+        },
+        {
+            title: 'Thriller de Quartier', description: 'Un coup de feu dans la nuit, une dette à payer.', category: 'serie', episodeNumber: 1, seasonNumber: 1, duration: '1:40', 
+            url: 'https://ireplay.tv/test/blender.m3u8', 
+            poster: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600', 
+            year: 2025, genre: 'Suspense', casting: 'Moussa Kone, Fatou Bamba', director: 'Ibrahim Cissé', rating: 9.1, coinsRequired: 0, quality: 'HD'
+        },
+        {
+            title: 'Contes Modernes', description: 'Une incantation dans un bureau moderne.', category: 'serie', episodeNumber: 1, seasonNumber: 1, duration: '1:30', 
+            url: 'https://ireplay.tv/test/blender.m3u8', 
+            poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600', 
+            year: 2026, genre: 'Fantastique', casting: 'Mariam Sanogo', director: 'Nadia Ben', rating: 8.5, coinsRequired: 0, quality: 'HD'
         },
 
-        // ========== DOCUMENTAIRES ==========
+        // ========== DOCUMENTAIRES (MP4 Archive) ==========
         {
-            title: 'Terres de Griots', description: 'Voyage au cœur de la tradition orale ouest-africaine.', category: 'documentaire', duration: '52min', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4', poster: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600', year: 2024, genre: 'Culture', casting: 'N/A', director: 'Djibril Sarr', rating: 8.4, coinsRequired: 0, quality: 'HD', language: 'FR'
+            title: 'Classiques du Cinéma', description: 'Un documentaire sur les grands classiques du cinéma mondial.', category: 'documentaire', duration: '52min', 
+            url: 'https://ia800509.us.archive.org/20/items/TheLittleShopOfHorrors1960_765/TheLittleShopOfHorrors1960.mp4', 
+            poster: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600', 
+            year: 2024, genre: 'Culture', director: 'Divers', rating: 8.0, coinsRequired: 0, quality: 'HD'
         },
         {
-            title: 'Abidjan, Ville Lumière', description: 'Une exploration de l\'évolution architecturale d\'Abidjan.', category: 'documentaire', duration: '45min', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', poster: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600', year: 2023, genre: 'Architecture', casting: 'N/A', director: 'Awa Ndiaye', rating: 7.8, coinsRequired: 0, quality: 'HD', language: 'FR'
-        },
-        {
-            title: 'Saveurs du Continent', description: 'À la découverte des cuisines qui unissent l\'Afrique.', category: 'documentaire', duration: '58min', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', poster: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600', year: 2025, genre: 'Cuisine', casting: 'N/A', director: 'Kofi Mensah', rating: 8.6, coinsRequired: 5, quality: 'HD', language: 'FR'
-        },
-
-        // ========== CONTES MODERNES ==========
-        {
-            title: 'Contes Modernes', description: 'Une incantation dans un bureau moderne.', category: 'serie', episodeNumber: 1, seasonNumber: 1, duration: '1:30', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600', year: 2026, genre: 'Fantastique', casting: 'Mariam Sanogo, Salif Keita', director: 'Nadia Ben', rating: 8.5, coinsRequired: 0, quality: 'HD', language: 'FR'
-        },
-        {
-            title: 'Contes Modernes', description: 'Le nouveau mari est l\'esprit invoqué.', category: 'serie', episodeNumber: 2, seasonNumber: 1, duration: '1:20', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600', year: 2026, genre: 'Fantastique', casting: 'Mariam Sanogo, Salif Keita', director: 'Nadia Ben', rating: 8.7, coinsRequired: 10, quality: 'HD', language: 'FR'
+            title: 'Histoire et Société', description: 'Exploration des mutations sociales à travers le temps.', category: 'documentaire', duration: '45min', 
+            url: 'https://ia601609.us.archive.org/28/items/AtWarWithTheArmy/AtWarWithTheArmy_512kb.mp4', 
+            poster: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600', 
+            year: 2025, genre: 'Société', director: 'Kofi', rating: 7.8, coinsRequired: 0, quality: 'HD'
         }
     ];
 
