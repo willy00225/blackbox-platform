@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
+// URL de l'API Backend (en dur pour la production)
+const API_URL = 'https://blackbox-platform-production-7339.up.railway.app'
+
 // Fonction utilitaire pour convertir la clé VAPID en Uint8Array
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
@@ -39,12 +42,12 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
         const registration = await navigator.serviceWorker.ready
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY)
+          applicationServerKey: urlBase64ToUint8Array('BLtV8rcv-Go7A7CBUZCz1qJkVDmj9FH_kw67Wvx0N90MQVaP64JvD0-l2jqSXV4UTfEVwcMXxUGvjuRN2M3_524')
         })
         // Envoie l'abonnement au backend si l'utilisateur est connecté
         const user = JSON.parse(localStorage.getItem('user'))
         if (user) {
-          await fetch('/api/notifications/subscribe', {
+          await fetch(`${API_URL}/api/notifications/subscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id, subscription })
