@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Star, Play, Plus, ArrowLeft, Loader2, Check, User, Users, Calendar, Clock, Clapperboard, Trophy, Monitor, Film, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// URL du Backend en dur pour la production
+const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
 const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }) => {
   const [userRating, setUserRating] = useState(0);

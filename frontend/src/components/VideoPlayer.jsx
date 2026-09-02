@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import Hls from 'hls.js'; // ✅ AJOUTÉ
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// URL du Backend en dur pour la production
+const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
 const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialIndex = 0 }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
