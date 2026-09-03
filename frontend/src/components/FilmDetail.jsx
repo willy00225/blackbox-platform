@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Play, Plus, ArrowLeft, Loader2, Check, User, Users, Calendar, Clock, Clapperboard, Trophy, Monitor, Film, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import StarRating from './StarRating'; // ✅ Import du composant StarRating optimisé
 
 // URL du Backend en dur pour la production
 const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
@@ -51,23 +52,6 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleRate = async (stars) => {
-    const currentUser = JSON.parse(localStorage.getItem('user'));
-    if (!currentUser) return showToast("❌ Connectez-vous pour noter");
-    
-    setUserRating(stars);
-    try {
-      await fetch(`${API_URL}/api/ratings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser.id, filmId: film.id, stars })
-      });
-      showToast("⭐ Note enregistrée !");
-    } catch (error) {
-      showToast("❌ Erreur lors de l'enregistrement");
-    }
-  };
-
   const handleAddToList = async () => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
     if (!currentUser) return showToast("❌ Connectez-vous");
@@ -86,25 +70,23 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
     }
   };
 
-  const renderStars = () => {
-    if (loadingRating) return <Loader2 className="w-6 h-6 animate-spin text-gray-500" />;
-    return [1, 2, 3, 4, 5].map((star) => (
-      <button key={star} onClick={() => handleRate(star)} className="hover:scale-110 transition" aria-label={`Noter ${star} étoiles`}>
-        <Star className={`w-6 h-6 ${star <= userRating ? 'text-gold fill-gold' : 'text-gray-600 hover:text-gold'}`} />
-      </button>
-    ));
-  };
-
   return (
-    <div className="min-h-screen bg-carbon text-offwhite pt-20 relative">
+    <div className="min-h-screen bg-carbon text-offwhite pt-24 md:pt-20 relative pb-20 lg:pb-0">
       {toast && (
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="fixed top-6 right-6 bg-deepblack border border-gold/40 text-gold px-6 py-3 rounded-xl shadow-2xl z-50">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-6 right-6 bg-deepblack border border-gold/40 text-gold px-6 py-3 rounded-xl shadow-2xl z-50"
+        >
           {toast}
         </motion.div>
       )}
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <button onClick={onBack} className="mb-6 flex items-center gap-2 text-gray-400 hover:text-gold transition">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
+        <button
+          onClick={onBack}
+          className="mb-6 flex items-center gap-2 text-gray-400 hover:text-gold transition"
+        >
           <ArrowLeft className="w-5 h-5" />
           Retour au catalogue
         </button>
@@ -128,7 +110,12 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
           </motion.div>
 
           {/* Infos */}
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex-1">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex-1"
+          >
             <h1 className="font-display text-3xl md:text-5xl font-black text-white mb-3">{film.title}</h1>
 
             <div className="flex flex-wrap gap-4 mb-6">
@@ -158,10 +145,13 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
               )}
             </div>
 
-            <div className="mt-4 mb-6 flex items-center gap-3 bg-deepblack p-4 rounded-xl border border-gray-800">
+            {/* Notation avec le composant StarRating optimisé tactile */}
+            <div className="mt-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-deepblack p-4 rounded-xl border border-gray-800">
               <span className="text-gray-400 text-sm font-medium">Votre note :</span>
-              <div className="flex gap-1">{renderStars()}</div>
-              {userRating > 0 && <span className="text-gold text-sm font-bold ml-2">({userRating}/5)</span>}
+              <StarRating user={user} film={film} />
+              {userRating > 0 && (
+                <span className="text-gold text-sm font-bold ml-2">({userRating}/5)</span>
+              )}
             </div>
 
             <div className="mt-6">
@@ -194,16 +184,24 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
               )}
             </div>
 
-            {/* Boutons d'action */}
-            <div className="mt-8 flex flex-wrap gap-4">
-              <button onClick={onPlay} className="bg-crimson text-white font-bold py-3 px-8 rounded-xl hover:bg-red-700 hover:shadow-glow-red transition flex items-center gap-2">
+            {/* Boutons d'action adaptés mobile */}
+            <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onPlay}
+                className="bg-crimson text-white font-bold py-4 px-8 rounded-xl hover:bg-red-700 hover:shadow-glow-red transition flex items-center justify-center gap-2"
+              >
                 <Play className="w-5 h-5" />
                 Regarder
-              </button>
-              <button onClick={handleAddToList} className="bg-deepblack/50 text-white border border-white/20 py-3 px-8 rounded-xl hover:border-gold hover:text-gold transition flex items-center gap-2">
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleAddToList}
+                className="bg-deepblack/50 text-white border border-white/20 py-4 px-8 rounded-xl hover:border-gold hover:text-gold transition flex items-center justify-center gap-2"
+              >
                 <Plus className="w-5 h-5" />
                 Ajouter à ma liste
-              </button>
+              </motion.button>
             </div>
 
             {/* Liste des épisodes pour les séries */}
@@ -220,16 +218,17 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
                 ) : episodes.length > 0 ? (
                   <div className="space-y-2">
                     {episodes.map(ep => (
-                      <button
+                      <motion.button
                         key={ep.id}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => onSelectEpisode(ep)}
-                        className="w-full flex items-center justify-between p-3 bg-carbon rounded-lg border border-gray-700 hover:border-gold/50 transition"
+                        className="w-full flex items-center justify-between p-4 bg-carbon rounded-lg border border-gray-700 hover:border-gold/50 transition"
                       >
                         <span className="text-white font-medium">
                           {ep.seasonNumber > 1 ? `S${ep.seasonNumber} · ` : ''}Épisode {ep.episodeNumber}
                         </span>
                         <ChevronRight className="w-5 h-5 text-gold" />
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 ) : (

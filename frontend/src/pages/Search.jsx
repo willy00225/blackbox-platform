@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal, X, Film, Tv, BookOpen } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Search, SlidersHorizontal, X, Film, Tv, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
@@ -21,6 +21,7 @@ const SearchPage = () => {
   const [genres, setGenres] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,20 +56,28 @@ const SearchPage = () => {
     params.append('limit', resultsPerPage);
 
     setLoading(true);
+    setError(null);
+
     fetch(`${API_URL}/api/videos?${params.toString()}`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur réseau');
+        return res.json();
+      })
       .then(data => {
-        // Si l'API renvoie un tableau simple, on gère la pagination côté client
         if (Array.isArray(data)) {
           setResults(data);
           setTotalPages(Math.ceil(data.length / resultsPerPage));
         } else {
-          // Si l'API renvoie un objet { results, totalPages }
           setResults(data.results || []);
           setTotalPages(data.totalPages || 1);
         }
       })
-      .catch(err => console.error('Erreur recherche', err))
+      .catch(err => {
+        console.error('Erreur recherche', err);
+        setError('Une erreur est survenue lors de la recherche. Veuillez réessayer.');
+        setResults([]);
+        setTotalPages(1);
+      })
       .finally(() => setLoading(false));
   }, [debouncedTerm, filters, currentPage, resultsPerPage]);
 
@@ -148,7 +157,9 @@ const SearchPage = () => {
           <SlidersHorizontal className="w-5 h-5" />
           Filtres
         </button>
-        <span className="text-gray-400 text-sm">{loading ? 'Chargement...' : `${results.length} résultat(s)`}</span>
+        <span className="text-gray-400 text-sm">
+          {loading ? 'Chargement...' : `${results.length} résultat(s)`}
+        </span>
       </div>
 
       {/* Panneau de filtres */}
@@ -195,19 +206,34 @@ const SearchPage = () => {
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-deepblack rounded-lg h-64 animate-pulse" />
+            <div key={i} className="bg-deepblack rounded-lg overflow-hidden animate-pulse">
+              <div className="h-52 bg-gray-800" />
+              <div className="p-3 space-y-2">
+                <div className="h-4 bg-gray-700 rounded w-3/4" />
+                <div className="h-3 bg-gray-700 rounded w-1/2" />
+              </div>
+            </div>
           ))}
+        </div>
+      ) : error ? (
+        <div className="text-center mt-10">
+          <AlertCircle className="w-12 h-12 text-crimson mx-auto mb-4" />
+          <p className="text-gray-400">{error}</p>
         </div>
       ) : results.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">
-          <p className="text-4xl mb-4">🎬</p>
-          <p>Aucun résultat trouvé. Essayez d'autres mots-clés.</p>
+          <Film className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <p className="text-xl font-semibold text-white mb-2">Aucun résultat trouvé</p>
+          <p className="text-gray-400">Essayez d'autres mots-clés ou filtres.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {results.map(film => (
+          {results.map((film, idx) => (
             <motion.div
               key={film.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.03 }}
               whileHover={{ scale: 1.05 }}
               onClick={() => navigate(`/watch/${film.id}`)}
               className="group relative bg-deepblack rounded-lg overflow-hidden shadow-lg cursor-pointer"
@@ -230,7 +256,7 @@ const SearchPage = () => {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages > 1 && !loading && !error && (
         <div className="flex justify-center items-center gap-2 mt-8">
           <button
             onClick={() => handlePageChange(currentPage - 1)}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Check, Crown, Star, Users, Loader2, Shield, Zap, Film, Gift, BadgeCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
@@ -9,13 +9,26 @@ const Subscriptions = ({ user, onUserUpdate }) => {
   const [currentStatus, setCurrentStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState(null);
+  const [toast, setToast] = useState(null); // ✅ État pour toast
+
+  // Afficher un toast
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => {
+    if (!user?.id) {
+      setLoading(false);
+      showToast('Connectez-vous pour voir les abonnements', 'error');
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const [plansRes, statusRes] = await Promise.all([
           fetch(`${API_URL}/api/subscriptions/plans`),
-          user?.id ? fetch(`${API_URL}/api/subscriptions/status/${user.id}`) : Promise.resolve(null)
+          fetch(`${API_URL}/api/subscriptions/status/${user.id}`)
         ]);
 
         if (plansRes.ok) {
@@ -23,12 +36,13 @@ const Subscriptions = ({ user, onUserUpdate }) => {
           setPlans(Array.isArray(plansData) ? plansData : []);
         }
 
-        if (statusRes && statusRes.ok) {
+        if (statusRes.ok) {
           const statusData = await statusRes.json();
           setCurrentStatus(statusData);
         }
       } catch (error) {
         console.error('Erreur chargement abonnements:', error);
+        showToast('Erreur lors du chargement des formules', 'error');
       } finally {
         setLoading(false);
       }
@@ -38,6 +52,11 @@ const Subscriptions = ({ user, onUserUpdate }) => {
   }, [user]);
 
   const handleSubscribe = async (planId) => {
+    if (!user?.id) {
+      showToast('Connectez-vous pour vous abonner', 'error');
+      return;
+    }
+
     setSubscribing(planId);
     try {
       const res = await fetch(`${API_URL}/api/subscriptions/subscribe`, {
@@ -47,19 +66,17 @@ const Subscriptions = ({ user, onUserUpdate }) => {
       });
       const data = await res.json();
       if (data.success) {
-        // Toast-like feedback
-        alert(`🎉 Abonnement ${data.planName || ''} activé ! Vous avez reçu 50 Coins bonus.`);
+        showToast(`🎉 Abonnement ${data.planName || ''} activé ! +50 Coins offerts.`);
         if (onUserUpdate) onUserUpdate(data.user);
-        // Mise à jour du statut sans recharger la page
         setCurrentStatus({
           subscription: data.user.subscription,
           expiry: data.user.subscriptionExpiry
         });
       } else {
-        alert(data.error || 'Erreur lors de l\'abonnement');
+        showToast(data.error || 'Erreur lors de l\'abonnement', 'error');
       }
     } catch (error) {
-      alert('Erreur réseau. Veuillez réessayer.');
+      showToast('Erreur réseau. Veuillez réessayer.', 'error');
     } finally {
       setSubscribing(null);
     }
@@ -76,12 +93,12 @@ const Subscriptions = ({ user, onUserUpdate }) => {
       const data = await res.json();
       if (res.ok) {
         setCurrentStatus({ subscription: 'none', expiry: null });
-        alert('Abonnement annulé.');
+        showToast('Abonnement annulé.');
       } else {
-        alert(data.error || 'Erreur lors de l\'annulation');
+        showToast(data.error || 'Erreur lors de l\'annulation', 'error');
       }
     } catch (error) {
-      alert('Erreur réseau. Veuillez réessayer.');
+      showToast('Erreur réseau. Veuillez réessayer.', 'error');
     }
   };
 
@@ -125,9 +142,28 @@ const Subscriptions = ({ user, onUserUpdate }) => {
 
   if (loading) {
     return (
-      <div className="pt-24 pb-20 px-4 max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-12 h-12 text-gold animate-spin mb-4" />
-        <p className="text-gray-400">Chargement des formules...</p>
+      <div className="pt-24 pb-20 px-4 max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="h-16 w-16 bg-gray-800 rounded-full mx-auto mb-4 animate-pulse" />
+          <div className="h-8 w-64 bg-gray-800 rounded mx-auto mb-3 animate-pulse" />
+          <div className="h-4 w-96 max-w-full bg-gray-800 rounded mx-auto animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          {[...Array(3)].map((_, idx) => (
+            <div key={idx} className="bg-deepblack border border-gray-800 rounded-3xl p-8 animate-pulse">
+              <div className="h-12 w-12 bg-gray-700 rounded-lg mb-6" />
+              <div className="h-6 w-24 bg-gray-700 rounded mb-3" />
+              <div className="h-4 w-full bg-gray-700 rounded mb-4" />
+              <div className="h-10 w-32 bg-gray-700 rounded mb-8" />
+              <div className="space-y-3 mb-8">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-4 w-full bg-gray-700 rounded" />
+                ))}
+              </div>
+              <div className="h-12 w-full bg-gray-700 rounded" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -136,6 +172,22 @@ const Subscriptions = ({ user, onUserUpdate }) => {
 
   return (
     <div className="pt-24 pb-20 px-4 max-w-6xl mx-auto">
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed top-6 right-6 z-50 px-6 py-3 rounded-xl shadow-2xl ${
+              toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-crimson text-white'
+            }`}
+          >
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* En-tête */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -188,93 +240,93 @@ const Subscriptions = ({ user, onUserUpdate }) => {
       )}
 
       {/* Grille des plans */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-        {plans.map((plan, idx) => {
-          const Icon = getPlanIcon(plan.name);
-          const isPremium = plan.name === 'Premium' || plan.name === 'Ultimate';
-          const isCurrentPlan = currentStatus?.subscription === plan.name;
+      {plans.length === 0 ? (
+        <div className="text-center py-16">
+          <Shield className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-400">Aucune formule disponible pour le moment.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          {plans.map((plan, idx) => {
+            const Icon = getPlanIcon(plan.name);
+            const isPremium = plan.name === 'Premium' || plan.name === 'Ultimate';
+            const isCurrentPlan = currentStatus?.subscription === plan.name;
 
-          return (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              whileHover={{ scale: 1.03, y: -5 }}
-              className={`relative bg-deepblack border rounded-3xl p-8 flex flex-col transition-all duration-300 ${
-                isPremium
-                  ? 'border-gold shadow-[0_10px_40px_rgba(197,160,89,0.25)]'
-                  : 'border-gray-800 hover:border-gray-600'
-              }`}
-            >
-              {/* Badge populaire */}
-              {isPremium && (
-                <span className="absolute -top-4 right-6 bg-gold text-black text-xs font-black px-4 py-1.5 rounded-full shadow-lg">
-                  ⭐ POPULAIRE
-                </span>
-              )}
-
-              {/* Icône du plan */}
-              <div className={`mb-6 ${isPremium ? 'text-gold' : 'text-white'}`}>
-                <Icon className="w-12 h-12" />
-              </div>
-
-              {/* Nom et description */}
-              <h2 className="text-2xl font-black text-white">{plan.name}</h2>
-              <p className="text-gray-400 text-sm mt-2 mb-6 min-h-[40px]">{plan.description}</p>
-
-              {/* Prix */}
-              <div className="mb-8">
-                <span className="text-5xl font-black text-white">{plan.price}</span>
-                <span className="text-gray-400 text-lg"> FCFA</span>
-                <span className="text-gray-500 text-sm block mt-1">/ {plan.duration}</span>
-              </div>
-
-              {/* Fonctionnalités */}
-              <ul className="space-y-4 mb-8 flex-1">
-                {[
-                  'Accès illimité à tout le catalogue',
-                  'Sans publicité',
-                  'Qualité HD & 4K',
-                  'Téléchargement hors ligne',
-                  'Bonus coins mensuels'
-                ].slice(0, plan.name === 'Essential' ? 3 : 5).map((feat, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-300 text-sm">
-                    <Check className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* Bouton d'abonnement */}
-              <button
-                onClick={() => handleSubscribe(plan.id)}
-                disabled={subscribing === plan.id || isCurrentPlan}
-                className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
-                  isCurrentPlan
-                    ? 'bg-gray-700 text-gray-300 cursor-not-allowed'
-                    : isPremium
-                    ? 'bg-gold text-black hover:bg-yellow-600 hover:shadow-gold'
-                    : 'bg-crimson text-white hover:bg-red-700'
+            return (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                whileHover={{ scale: 1.03, y: -5 }}
+                className={`relative bg-deepblack border rounded-3xl p-8 flex flex-col transition-all duration-300 ${
+                  isPremium
+                    ? 'border-gold shadow-[0_10px_40px_rgba(197,160,89,0.25)]'
+                    : 'border-gray-800 hover:border-gray-600'
                 }`}
               >
-                {subscribing === plan.id ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Traitement...
-                  </>
-                ) : isCurrentPlan ? (
-                  'Abonnement actif'
-                ) : (
-                  'S\'abonner'
+                {isPremium && (
+                  <span className="absolute -top-4 right-6 bg-gold text-black text-xs font-black px-4 py-1.5 rounded-full shadow-lg">
+                    ⭐ POPULAIRE
+                  </span>
                 )}
-              </button>
-            </motion.div>
-          );
-        })}
-      </div>
 
-      {/* Note de bas de page */}
+                <div className={`mb-6 ${isPremium ? 'text-gold' : 'text-white'}`}>
+                  <Icon className="w-12 h-12" />
+                </div>
+
+                <h2 className="text-2xl font-black text-white">{plan.name}</h2>
+                <p className="text-gray-400 text-sm mt-2 mb-6 min-h-[40px]">{plan.description}</p>
+
+                <div className="mb-8">
+                  <span className="text-5xl font-black text-white">{plan.price}</span>
+                  <span className="text-gray-400 text-lg"> FCFA</span>
+                  <span className="text-gray-500 text-sm block mt-1">/ {plan.duration}</span>
+                </div>
+
+                <ul className="space-y-4 mb-8 flex-1">
+                  {[
+                    'Accès illimité à tout le catalogue',
+                    'Sans publicité',
+                    'Qualité HD & 4K',
+                    'Téléchargement hors ligne',
+                    'Bonus coins mensuels'
+                  ].slice(0, plan.name === 'Essential' ? 3 : 5).map((feat, i) => (
+                    <li key={i} className="flex items-start gap-3 text-gray-300 text-sm">
+                      <Check className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handleSubscribe(plan.id)}
+                  disabled={subscribing === plan.id || isCurrentPlan}
+                  className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 min-h-[52px] ${
+                    isCurrentPlan
+                      ? 'bg-gray-700 text-gray-300 cursor-not-allowed'
+                      : isPremium
+                      ? 'bg-gold text-black hover:bg-yellow-600 hover:shadow-gold'
+                      : 'bg-crimson text-white hover:bg-red-700'
+                  }`}
+                >
+                  {subscribing === plan.id ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Traitement...
+                    </>
+                  ) : isCurrentPlan ? (
+                    'Abonnement actif'
+                  ) : (
+                    'S\'abonner'
+                  )}
+                </button>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
       <p className="text-center text-gray-500 text-xs mt-10">
         🔒 Paiement sécurisé · Sans engagement · Annulable à tout moment
       </p>

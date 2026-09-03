@@ -46,18 +46,25 @@ const Pagination = ({ page, totalPages, setPage }) => {
   );
 };
 
-const StatCard = ({ icon: Icon, label, value, color }) => (
-  <div className="bg-deepblack p-6 rounded-xl border border-gray-800 hover:border-gray-600 transition-all duration-300 hover:shadow-xl">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-gray-400 text-sm uppercase tracking-wider font-medium">{label}</p>
-        <p className="text-3xl font-bold text-white mt-2">{value}</p>
-      </div>
-      <div className={`p-3 rounded-full ${color}`}>
-        <Icon className="w-6 h-6 text-white" />
+// ✅ StatCard devient cliquable
+const StatCard = ({ icon: Icon, label, value, color, onClick }) => (
+  <button
+    onClick={onClick}
+    className="w-full text-left focus:outline-none group"
+    title={`Voir ${label}`}
+  >
+    <div className="bg-deepblack p-6 rounded-xl border border-gray-800 group-hover:border-gold/40 transition-all duration-300 group-hover:shadow-xl cursor-pointer">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-400 text-sm uppercase tracking-wider font-medium">{label}</p>
+          <p className="text-3xl font-bold text-white mt-2">{value}</p>
+        </div>
+        <div className={`p-3 rounded-full ${color}`}>
+          <Icon className="w-6 h-6 text-white" />
+        </div>
       </div>
     </div>
-  </div>
+  </button>
 );
 
 // ------- ErrorBoundary -------
@@ -205,10 +212,9 @@ const AdminPanel = ({ token, onLogout }) => {
     name: '', duration: 'monthly', price: 0, description: '', features: '', isActive: true 
   });
 
-  // Forcer le rechargement sans cache
+  // Charger les plans
   const loadPlans = async () => {
     try {
-      console.log("Chargement des plans depuis le serveur...");
       const res = await fetch(`${API_URL}/api/admin/plans`, { 
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -219,23 +225,10 @@ const AdminPanel = ({ token, onLogout }) => {
       
       if (res.ok) {
         const data = await res.json();
-        console.log("Plans reçus du serveur:", data);
-        
-        // VIDER l'état avant de mettre les nouvelles données
-        setPlans([]);
-        
-        setTimeout(() => {
-          if (Array.isArray(data)) {
-            setPlans(data);
-          }
-        }, 200);
-      } else {
-        console.error("Erreur chargement plans - Status:", res.status);
-        setPlans([]);
+        setPlans(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error("Erreur chargement plans:", error);
-      setPlans([]);
     }
   };
 
@@ -250,9 +243,6 @@ const AdminPanel = ({ token, onLogout }) => {
     const planId = currentPlan ? currentPlan.id : null;
     const url = planId ? `${API_URL}/api/admin/plans/${planId}` : `${API_URL}/api/admin/plans`;
     const method = planId ? 'PUT' : 'POST';
-    
-    console.log("Soumission plan - URL:", url, "Méthode:", method, "ID:", planId);
-    console.log("Données envoyées:", newPlan);
     
     try {
       const res = await fetch(url, {
@@ -269,28 +259,22 @@ const AdminPanel = ({ token, onLogout }) => {
       });
       
       const responseData = await res.json().catch(() => ({}));
-      console.log("Réponse du serveur:", responseData);
       
       if (res.ok) {
-        alert(planId ? 'Plan modifié avec succès !' : 'Plan créé avec succès !');
-        // Réinitialiser le formulaire
+        showToast(planId ? '✅ Plan modifié avec succès !' : '✅ Plan créé avec succès !');
         setNewPlan({ name: '', duration: 'monthly', price: 0, description: '', features: '', isActive: true });
         setCurrentPlan(null);
-        // Recharger les plans
         await loadPlans();
       } else {
-        console.error("Erreur:", responseData);
-        alert(responseData.error || `Erreur lors de l'enregistrement (${res.status})`);
+        showToast(responseData.error || `❌ Erreur lors de l'enregistrement (${res.status})`, 'error');
       }
     } catch (error) {
-      console.error("Erreur:", error);
-      alert('Erreur serveur');
+      showToast('❌ Erreur serveur', 'error');
     }
   };
 
-  // Modifier un plan - CORRIGÉ pour gérer correctement le JSON
+  // Modifier un plan
   const handleEditPlan = (plan) => {
-    console.log("Édition du plan:", plan);
     setCurrentPlan(plan);
     setNewPlan({ 
       name: plan.name || '', 
@@ -305,8 +289,6 @@ const AdminPanel = ({ token, onLogout }) => {
 
   // Supprimer un plan
   const handleDeletePlan = async (id) => {
-    console.log("Tentative de suppression du plan - ID:", id);
-    
     if (window.confirm('Supprimer ce plan ?')) {
       try {
         const res = await fetch(`${API_URL}/api/admin/plans/${id}`, { 
@@ -314,31 +296,17 @@ const AdminPanel = ({ token, onLogout }) => {
           headers: { 'Authorization': `Bearer ${token}` } 
         });
         
-        console.log("Status de la réponse:", res.status);
         const responseData = await res.json().catch(() => ({}));
-        console.log("Réponse du serveur:", responseData);
         
         if (res.ok) {
-          // Mettre à jour l'état local IMMÉDIATEMENT
-          setPlans(prevPlans => {
-            const filtered = prevPlans.filter(plan => plan.id !== id);
-            console.log("Plans après filtrage local:", filtered);
-            return filtered;
-          });
-          
-          alert('Plan supprimé !');
-          
-          // Recharger depuis le serveur après un petit délai
-          setTimeout(async () => {
-            await loadPlans();
-          }, 500);
+          setPlans(prevPlans => prevPlans.filter(plan => plan.id !== id));
+          showToast('🗑️ Plan supprimé !');
+          await loadPlans();
         } else {
-          console.error("Erreur suppression - Status:", res.status);
-          alert(responseData.error || `Erreur lors de la suppression (${res.status})`);
+          showToast(responseData.error || `❌ Erreur lors de la suppression (${res.status})`, 'error');
         }
       } catch (error) {
-        console.error("Erreur:", error);
-        alert('Erreur serveur');
+        showToast('❌ Erreur serveur', 'error');
       }
     }
   };
@@ -929,6 +897,16 @@ const AdminPanel = ({ token, onLogout }) => {
               <Smartphone className="w-5 h-5" />
               Fournisseurs SMS
             </button>
+            {/* ✅ Nouveau bouton Abonnements */}
+            <button
+              onClick={() => { setActiveSection('plans'); setSidebarOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                activeSection === 'plans' ? 'bg-gold/10 text-gold border border-gold/30' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              }`}
+            >
+              <Crown className="w-5 h-5" />
+              Abonnements
+            </button>
             <button
               onClick={() => { setActiveSection('settings'); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
@@ -967,6 +945,7 @@ const AdminPanel = ({ token, onLogout }) => {
                 {activeSection === 'ads' && 'Publicités'}
                 {activeSection === 'payments' && 'Passerelles de Paiement'}
                 {activeSection === 'sms' && 'Fournisseurs SMS'}
+                {activeSection === 'plans' && 'Plans d\'Abonnement'}
                 {activeSection === 'settings' && 'Paramètres'}
               </h1>
             </div>
@@ -1012,13 +991,15 @@ const AdminPanel = ({ token, onLogout }) => {
           {/* SECTION DASHBOARD */}
           {activeSection === 'dashboard' && (
             <div className="space-y-8">
+              {/* Cartes de Stats cliquables */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                <StatCard icon={Users} label="Utilisateurs" value={data.stats.totalUsers || 0} color="bg-blue-600" />
-                <StatCard icon={Film} label="Films" value={data.stats.totalVideos || 0} color="bg-purple-600" />
-                <StatCard icon={Star} label="Notes" value={data.stats.totalRatings || 0} color="bg-gold" />
-                <StatCard icon={History} label="Historiques" value={data.stats.totalHistory || 0} color="bg-crimson" />
+                <StatCard icon={Users} label="Utilisateurs" value={data.stats.totalUsers || 0} color="bg-blue-600" onClick={() => setActiveSection('users')} />
+                <StatCard icon={Film} label="Films" value={data.stats.totalVideos || 0} color="bg-purple-600" onClick={() => setActiveSection('videos')} />
+                <StatCard icon={Star} label="Notes" value={data.stats.totalRatings || 0} color="bg-gold" onClick={() => setActiveSection('videos')} />
+                <StatCard icon={History} label="Historiques" value={data.stats.totalHistory || 0} color="bg-crimson" onClick={() => setActiveSection('users')} />
               </div>
 
+              {/* Graphiques factices */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-deepblack p-6 rounded-xl border border-gray-800">
                   <h3 className="text-lg font-semibold text-white mb-4">Aperçu des revenus</h3>
@@ -1059,6 +1040,7 @@ const AdminPanel = ({ token, onLogout }) => {
                 </div>
               </div>
 
+              {/* Liens rapides */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <button onClick={() => setActiveSection('videos')} className="bg-deepblack p-6 rounded-xl border border-gray-800 hover:border-gold/50 transition group">
                   <Plus className="w-8 h-8 text-gold mb-4 group-hover:scale-110 transition" />
@@ -1087,6 +1069,7 @@ const AdminPanel = ({ token, onLogout }) => {
                   <Film className="w-6 h-6 text-gold" /> Catalogue
                 </h2>
 
+                {/* Filtres */}
                 <div className="mb-6 p-4 bg-carbon rounded-lg border border-gray-700">
                   <div className="flex flex-wrap gap-3 items-center">
                     <div className="flex-1 min-w-[200px] relative">
@@ -1134,6 +1117,7 @@ const AdminPanel = ({ token, onLogout }) => {
                   </div>
                 </div>
 
+                {/* Liste des vidéos */}
                 <div className="space-y-4">
                   {currentVideos.map((video, index) => (
                     <div
@@ -1660,214 +1644,92 @@ const AdminPanel = ({ token, onLogout }) => {
             </div>
           )}
 
-          {/* SECTION PAIEMENTS */}
-          {activeSection === 'payments' && (
-            <div className="bg-deepblack p-6 rounded-xl border border-gray-800">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <CreditCard className="w-6 h-6 text-gold" /> Passerelles de Paiement
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-gray-400 mb-4 font-medium">Passerelles configurées</h3>
-                  {gateways.length === 0 ? (
-                    <div className="bg-carbon p-8 rounded-lg border border-gray-700 text-center">
-                      <CreditCard className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                      <p className="text-gray-500">Aucune passerelle configurée pour le moment.</p>
-                    </div>
+          {/* SECTION PLANS D'ABONNEMENT */}
+          {activeSection === 'plans' && (
+            <div className="bg-deepblack p-6 rounded-xl border border-gray-800 mb-8">
+              <h2 className="text-xl font-bold mb-6">💎 Plans d'Abonnement</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Liste des plans */}
+                <div className="lg:col-span-2 space-y-3">
+                  {plans.length === 0 ? (
+                    <p className="text-gray-500">Aucun plan créé pour le moment.</p>
                   ) : (
-                    <div className="space-y-3">
-                      {gateways.map((g, index) => (
-                        <div key={g.id || `gw-${index}`} className="flex justify-between items-center p-4 bg-carbon rounded-lg border border-gray-700 hover:border-gold/40 transition">
-                          <div className="flex items-center gap-4">
-                            {g.logo ? (
-                              <img src={g.logo} alt={g.name} className="w-12 h-12 object-contain rounded-full bg-white p-1" />
-                            ) : (
-                              <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center">
-                                <CreditCard className="w-6 h-6 text-gray-500" />
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-semibold text-white">{g.name}</p>
-                              <span className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${
-                                g.isActive ? 'bg-emerald-900/50 text-emerald-300' : 'bg-gray-800 text-gray-400'
-                              }`}>
-                                {g.isActive ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setCurrentGateway(g)}
-                              className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition"
-                              title="Modifier"
-                            >
-                              <Pencil className="w-4 h-4 text-gold" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteGateway(g.id)}
-                              className="p-2 bg-gray-800 hover:bg-red-600 rounded-lg transition"
-                              title="Supprimer"
-                            >
-                              <Trash2 className="w-4 h-4 text-crimson" />
-                            </button>
-                          </div>
+                    plans.map(plan => (
+                      <div key={plan.id} className="flex justify-between items-center p-4 bg-carbon rounded-lg border border-gray-700">
+                        <div>
+                          <p className="font-semibold flex items-center gap-2">
+                            {plan.name === 'Premium' ? <Crown className="w-4 h-4 text-gold" /> : plan.name === 'Family' ? <Users className="w-4 h-4 text-gold" /> : <Star className="w-4 h-4 text-gold" />}
+                            {plan.name}
+                          </p>
+                          <p className="text-sm text-gray-500">{plan.price} FCFA / {plan.duration}</p>
+                          <p className="text-xs text-gray-600">{plan.isActive ? 'Actif' : 'Inactif'}</p>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleEditPlan(plan)} className="text-gold hover:bg-gray-700 px-3 py-1 rounded">✏️ Modifier</button>
+                          <button onClick={() => handleDeletePlan(plan.id)} className="text-crimson hover:bg-gray-700 px-3 py-1 rounded">🗑️ Supprimer</button>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
 
-                <form onSubmit={handleGatewaySubmit} className="space-y-5">
-                  <div>
-                    <label className="text-sm text-gray-400 block mb-1.5">Nom de la passerelle</label>
-                    <input 
-                      type="text" 
-                      placeholder="ex: Wave, Orange Money, Mobile Money..."
-                      value={currentGateway.name} 
-                      onChange={(e) => setCurrentGateway({...currentGateway, name: e.target.value})} 
-                      className="w-full p-2.5 bg-carbon rounded-lg border border-gray-700 text-white focus:border-gold outline-none" 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-400 block mb-1.5">URL du logo</label>
-                    <input 
-                      type="text" 
-                      placeholder="https://..." 
-                      value={currentGateway.logo} 
-                      onChange={(e) => setCurrentGateway({...currentGateway, logo: e.target.value})} 
-                      className="w-full p-2.5 bg-carbon rounded-lg border border-gray-700 text-white focus:border-gold outline-none" 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-400 block mb-1.5">Clé API</label>
-                    <input 
-                      type="text" 
-                      placeholder="Clé publique"
-                      value={currentGateway.apiKey} 
-                      onChange={(e) => setCurrentGateway({...currentGateway, apiKey: e.target.value})} 
-                      className="w-full p-2.5 bg-carbon rounded-lg border border-gray-700 text-white focus:border-gold outline-none" 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-400 block mb-1.5">Clé Secrète</label>
-                    <input 
-                      type="password" 
-                      placeholder="Clé secrète"
-                      value={currentGateway.apiSecret} 
-                      onChange={(e) => setCurrentGateway({...currentGateway, apiSecret: e.target.value})} 
-                      className="w-full p-2.5 bg-carbon rounded-lg border border-gray-700 text-white focus:border-gold outline-none" 
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 text-gray-400 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={currentGateway.isActive} 
-                        onChange={(e) => setCurrentGateway({...currentGateway, isActive: e.target.checked})} 
-                        className="w-4 h-4 rounded"
-                      />
-                      Activer cette passerelle
-                    </label>
-                    {currentGateway.id && (
-                      <button 
-                        type="button" 
-                        onClick={() => setCurrentGateway({ name: '', logo: '', apiKey: '', apiSecret: '', isActive: false })}
-                        className="text-xs text-gray-500 hover:text-white"
+                {/* Formulaire Ajout/Modification */}
+                <div className="bg-carbon p-5 rounded-xl border border-gray-700">
+                  <h3 className="font-bold mb-4">{currentPlan ? 'Modifier le plan' : 'Ajouter un plan'}</h3>
+                  <form onSubmit={handlePlanSubmit} className="space-y-4">
+                    <div>
+                      <label className="text-xs text-gray-400">Nom du plan</label>
+                      <select 
+                        value={newPlan.name} onChange={(e) => setNewPlan({...newPlan, name: e.target.value})}
+                        className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none"
                       >
-                        Annuler
-                      </button>
-                    )}
-                  </div>
-                  <button type="submit" className="w-full py-2.5 bg-gold hover:bg-yellow-600 text-black font-bold rounded-lg transition flex items-center justify-center gap-2">
-                    {currentGateway.id ? <CheckCircle className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                    {currentGateway.id ? 'Mettre à jour' : 'Enregistrer'}
-                  </button>
-                </form>
+                        <option value="">Choisir...</option>
+                        <option value="Essential">Essential</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Family">Family</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400">Durée</label>
+                      <select 
+                        value={newPlan.duration} onChange={(e) => setNewPlan({...newPlan, duration: e.target.value})}
+                        className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none"
+                      >
+                        <option value="weekly">Hebdomadaire</option>
+                        <option value="monthly">Mensuel</option>
+                        <option value="annual">Annuel</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400">Prix (FCFA)</label>
+                      <input type="number" value={newPlan.price} onChange={(e) => setNewPlan({...newPlan, price: parseInt(e.target.value) || 0})} className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none" required />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400">Description</label>
+                      <input type="text" value={newPlan.description} onChange={(e) => setNewPlan({...newPlan, description: e.target.value})} className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400">Avantages (séparés par des virgules)</label>
+                      <input type="text" value={newPlan.features} onChange={(e) => setNewPlan({...newPlan, features: e.target.value})} placeholder="HD, Sans pub, Accès illimité..." className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none" />
+                    </div>
+                    <label className="flex items-center gap-2 text-gray-300 text-sm">
+                      <input type="checkbox" checked={newPlan.isActive} onChange={(e) => setNewPlan({...newPlan, isActive: e.target.checked})} />
+                      Activer ce plan
+                    </label>
+                    <button type="submit" className="w-full py-2 bg-gold hover:bg-yellow-600 text-black font-bold rounded">
+                      {currentPlan ? 'Sauvegarder' : 'Créer le plan'}
+                    </button>
+                  </form>
+                  {currentPlan && (
+                    <button onClick={() => { setCurrentPlan(null); setNewPlan({ name: '', duration: 'monthly', price: 0, description: '', features: '', isActive: true }); }} className="w-full py-2 mt-2 bg-deepblack border border-gray-700 text-gray-400 hover:text-white rounded">
+                      Annuler
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
-
-          {/* ===== SECTION GESTION DES ABONNEMENTS ===== */}
-          <div className="bg-deepblack p-6 rounded-xl border border-gray-800 mb-8">
-            <h2 className="text-xl font-bold mb-6">💎 Plans d'Abonnement</h2>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Liste des plans */}
-              <div className="lg:col-span-2 space-y-3">
-                {plans.map(plan => (
-                  <div key={plan.id} className="flex justify-between items-center p-4 bg-carbon rounded-lg border border-gray-700">
-                    <div>
-                      <p className="font-semibold flex items-center gap-2">
-                        {plan.name === 'Premium' ? <Crown className="w-4 h-4 text-gold" /> : plan.name === 'Family' ? <Users className="w-4 h-4 text-gold" /> : <Star className="w-4 h-4 text-gold" />}
-                        {plan.name}
-                      </p>
-                      <p className="text-sm text-gray-500">{plan.price} FCFA / {plan.duration}</p>
-                      <p className="text-xs text-gray-600">{plan.isActive ? 'Actif' : 'Inactif'}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleEditPlan(plan)} className="text-gold hover:bg-gray-700 px-3 py-1 rounded">✏️ Modifier</button>
-                      <button onClick={() => handleDeletePlan(plan.id)} className="text-crimson hover:bg-gray-700 px-3 py-1 rounded">🗑️ Supprimer</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Formulaire Ajout/Modification */}
-              <div className="bg-carbon p-5 rounded-xl border border-gray-700">
-                <h3 className="font-bold mb-4">{currentPlan ? 'Modifier le plan' : 'Ajouter un plan'}</h3>
-                <form onSubmit={handlePlanSubmit} className="space-y-4">
-                  <div>
-                    <label className="text-xs text-gray-400">Nom du plan</label>
-                    <select 
-                      value={newPlan.name} onChange={(e) => setNewPlan({...newPlan, name: e.target.value})}
-                      className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none"
-                    >
-                      <option value="">Choisir...</option>
-                      <option value="Essential">Essential</option>
-                      <option value="Premium">Premium</option>
-                      <option value="Family">Family</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400">Durée</label>
-                    <select 
-                      value={newPlan.duration} onChange={(e) => setNewPlan({...newPlan, duration: e.target.value})}
-                      className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none"
-                    >
-                      <option value="weekly">Hebdomadaire</option>
-                      <option value="monthly">Mensuel</option>
-                      <option value="annual">Annuel</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400">Prix (FCFA)</label>
-                    <input type="number" value={newPlan.price} onChange={(e) => setNewPlan({...newPlan, price: parseInt(e.target.value) || 0})} className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none" required />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400">Description</label>
-                    <input type="text" value={newPlan.description} onChange={(e) => setNewPlan({...newPlan, description: e.target.value})} className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400">Avantages (séparés par des virgules)</label>
-                    <input type="text" value={newPlan.features} onChange={(e) => setNewPlan({...newPlan, features: e.target.value})} placeholder="HD, Sans pub, Accès illimité..." className="w-full p-2 bg-deepblack border border-gray-700 rounded text-white focus:border-gold outline-none" />
-                  </div>
-                  <label className="flex items-center gap-2 text-gray-300 text-sm">
-                    <input type="checkbox" checked={newPlan.isActive} onChange={(e) => setNewPlan({...newPlan, isActive: e.target.checked})} />
-                    Activer ce plan
-                  </label>
-                  <button type="submit" className="w-full py-2 bg-gold hover:bg-yellow-600 text-black font-bold rounded">
-                    {currentPlan ? 'Sauvegarder' : 'Créer le plan'}
-                  </button>
-                </form>
-                {currentPlan && (
-                  <button onClick={() => { setCurrentPlan(null); setNewPlan({ name: '', duration: 'monthly', price: 0, description: '', features: '', isActive: true }); }} className="w-full py-2 mt-2 bg-deepblack border border-gray-700 text-gray-400 hover:text-white rounded">
-                    Annuler
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* SECTION PARAMÈTRES */}
           {activeSection === 'settings' && (

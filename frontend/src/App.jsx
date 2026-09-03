@@ -1,7 +1,7 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Library, User, Search, Crown } from 'lucide-react';
+import { Home, Library, User, Search, Crown, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from './components/Navbar';
 import SearchOverlay from './components/SearchOverlay';
 import SplashScreen from './components/SplashScreen';
@@ -37,6 +37,105 @@ const generateSrcSet = (url, widths = [400, 800, 1200, 1920]) => {
 const generateSizes = (defaultSizes = '(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1920px') =>
   defaultSizes;
 
+// ✅ Composant SkeletonCard
+const SkeletonCard = () => (
+  <div className="animate-pulse bg-deepblack rounded-lg overflow-hidden shadow-lg">
+    <div className="w-full h-40 md:h-48 bg-gray-800" />
+    <div className="p-3 space-y-2">
+      <div className="h-4 bg-gray-700 rounded w-3/4" />
+      <div className="h-3 bg-gray-700 rounded w-1/2" />
+    </div>
+  </div>
+);
+
+// ✅ Composant Carrousel Horizontal (Défilement automatique + flèches desktop)
+const AutoScrollRow = ({ items, onSelect }) => {
+  const containerRef = useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Défilement automatique toutes les 3 secondes
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      if (containerRef.current) {
+        const maxScroll = containerRef.current.scrollWidth - containerRef.current.clientWidth;
+        if (containerRef.current.scrollLeft >= maxScroll - 10) {
+          containerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          containerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+        }
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  // Fonctions pour flèches manuelles
+  const scrollLeft = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div
+      className="relative group"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
+      <div
+        ref={containerRef}
+        className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory"
+      >
+        {items.map((film) => (
+          <motion.div
+            key={film.id}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onSelect(film)}
+            className="group relative bg-deepblack rounded-lg overflow-hidden shadow-lg cursor-pointer flex-shrink-0 w-40 md:w-48 snap-start"
+          >
+            <img
+              src={film.poster}
+              alt={film.title}
+              className="w-full h-auto object-cover group-hover:opacity-80 transition"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300"></div>
+            <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-4 group-hover:translate-y-0 transition duration-300">
+              <p className="text-sm font-semibold text-white">{film.title}</p>
+              <p className="text-xs text-gold mt-1">{film.coinsRequired > 0 ? `${film.coinsRequired} Coins` : 'Gratuit'}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Flèches desktop (apparaissent au survol) */}
+      <button
+        onClick={scrollLeft}
+        className="hidden md:flex absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition"
+        aria-label="Défiler vers la gauche"
+      >
+        <ChevronLeft className="w-6 h-6" />
+      </button>
+      <button
+        onClick={scrollRight}
+        className="hidden md:flex absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition"
+        aria-label="Défiler vers la droite"
+      >
+        <ChevronRight className="w-6 h-6" />
+      </button>
+    </div>
+  );
+};
+
 function UserApp() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,6 +151,7 @@ function UserApp() {
   const [seriesEpisodes, setSeriesEpisodes] = useState([]);
   const [initialIndex, setInitialIndex] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [filmsLoading, setFilmsLoading] = useState(true);
 
   const getCategory = () => {
     if (location.pathname === '/films') return 'film';
@@ -94,8 +194,14 @@ function UserApp() {
 
     fetch(`${API_URL}/api/videos`)
       .then(res => res.json())
-      .then(data => setFilms(data))
-      .catch(err => console.error(err));
+      .then(data => {
+        setFilms(data);
+        setFilmsLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setFilmsLoading(false);
+      });
 
     setTimeout(() => setIsLoading(false), 3000);
   }, []);
@@ -329,7 +435,11 @@ function UserApp() {
                              category === 'documentaire' ? '🎥 Documentaires' : 
                              category === 'ma-liste' ? '❤️ Ma liste' : ''}
                           </h3>
-                          {filteredFilms.length === 0 ? (
+                          {filmsLoading ? (
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                              {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+                            </div>
+                          ) : filteredFilms.length === 0 ? (
                             <p className="text-gray-500">Aucun contenu dans cette catégorie pour le moment.</p>
                           ) : (
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -361,61 +471,26 @@ function UserApp() {
                       ) : (
                         <>
                           <h3 className="font-display text-xl font-bold text-white mb-6 border-l-4 border-crimson pl-4">🔥 Tendances actuelles</h3>
-                          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-10">
-                            {films.slice(0, 6).map(film => (
-                              <motion.div 
-                                key={film.id} 
-                                whileHover={{ scale: 1.05 }}
-                                onClick={() => handleSelectFilm(film)} 
-                                className="group relative bg-deepblack rounded-lg overflow-hidden transition duration-300 shadow-lg cursor-pointer"
-                              >
-                                <img 
-                                  src={film.poster} 
-                                  srcSet={generateSrcSet(film.poster, [300, 600, 900])} 
-                                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 200px"
-                                  alt={film.title} 
-                                  className="w-full h-auto object-cover group-hover:opacity-80 transition" 
-                                  loading="lazy" 
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                                <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-4 group-hover:translate-y-0 transition duration-300">
-                                  <p className="text-sm font-semibold text-white">{film.title}</p>
-                                  <p className="text-xs text-gold mt-1">{film.coinsRequired > 0 ? `${film.coinsRequired} Coins` : 'Gratuit'}</p>
-                                </div>
-                              </motion.div>
-                            ))}
-                          </div>
+                          
+                          {filmsLoading ? (
+                            <div className="flex gap-4 overflow-hidden pb-4">
+                              {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+                            </div>
+                          ) : (
+                            <AutoScrollRow items={films.slice(0, 10)} onSelect={handleSelectFilm} />
+                          )}
 
                           {universes.map((universe, idx) => (
                             <div key={idx} className="mb-10">
                               <h3 className="font-display text-xl font-bold text-white mb-6 border-l-4 border-crimson pl-4">
                                 {universe.icon} {universe.name}
                               </h3>
-                              {films.filter(film => film.title === universe.name).length > 0 ? (
-                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                  {films.filter(film => film.title === universe.name).map(film => (
-                                    <motion.div 
-                                      key={film.id} 
-                                      whileHover={{ scale: 1.05 }}
-                                      onClick={() => handleSelectFilm(film)} 
-                                      className="group relative bg-deepblack rounded-lg overflow-hidden transition duration-300 shadow-lg cursor-pointer"
-                                    >
-                                      <img 
-                                        src={film.poster} 
-                                        srcSet={generateSrcSet(film.poster, [300, 600, 900])} 
-                                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 200px"
-                                        alt={film.title} 
-                                        className="w-full h-auto object-cover group-hover:opacity-80 transition" 
-                                        loading="lazy" 
-                                      />
-                                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                                      <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-4 group-hover:translate-y-0 transition duration-300">
-                                        <p className="text-sm font-semibold text-white">Épisode {film.episodeNumber}</p>
-                                        <p className="text-xs text-gold mt-1">{film.coinsRequired > 0 ? `${film.coinsRequired} Coins` : 'Gratuit'}</p>
-                                      </div>
-                                    </motion.div>
-                                  ))}
+                              {filmsLoading ? (
+                                <div className="flex gap-4 overflow-hidden pb-4">
+                                  {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
                                 </div>
+                              ) : films.filter(film => film.title === universe.name).length > 0 ? (
+                                <AutoScrollRow items={films.filter(film => film.title === universe.name)} onSelect={handleSelectFilm} />
                               ) : (
                                 <p className="text-gray-500 text-sm">Aucun contenu dans cet univers pour le moment.</p>
                               )}

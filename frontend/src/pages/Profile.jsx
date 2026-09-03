@@ -4,7 +4,7 @@ import {
   Clock, Trash2, Play, Coins, Film, Copy, Share2, Users,
   LogOut, Check, ArrowLeft, User, ChevronRight, Eye, Star, Wallet,
   Settings, Mail, Lock, Globe, Monitor, BellOff, Bell, Shield,
-  Save, X
+  Save, X, PlusCircle, History
 } from 'lucide-react';
 
 const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
@@ -50,7 +50,6 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     ])
       .then(([historyRes, watchlistRes]) => Promise.all([historyRes.json(), watchlistRes.json()]))
       .then(([historyData, watchlistData]) => {
-        // Sécuriser les données : si ce ne sont pas des tableaux, on met []
         setHistory(Array.isArray(historyData) ? historyData : []);
         setWatchlist(Array.isArray(watchlistData) ? watchlistData : []);
       })
@@ -63,7 +62,6 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  // Sauvegarder nom/email
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
@@ -84,7 +82,6 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     }
   };
 
-  // Changer mot de passe
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     if (newPassword.length < 6) return showMessage('Le mot de passe doit contenir au moins 6 caractères', 'error');
@@ -107,7 +104,6 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     }
   };
 
-  // Sauvegarder préférences
   const handlePreferencesSave = async (e) => {
     e.preventDefault();
     try {
@@ -126,7 +122,6 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
     }
   };
 
-  // Déconnexion globale
   const handleLogoutAll = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -142,7 +137,6 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
         showMessage('Toutes les sessions ont été révoquées');
         onLogout();
       } else {
-        // Même si erreur, on force la déconnexion locale
         showMessage('Session expirée, vous êtes déconnecté', 'error');
         onLogout();
       }
@@ -180,13 +174,14 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
   };
 
   if (loading) {
+    // Squelettes de chargement distincts pour l'historique et la watchlist
     return (
       <div className="min-h-screen bg-carbon text-offwhite p-8">
         <div className="animate-pulse">
           <div className="h-8 w-64 bg-gray-700 rounded mb-8"></div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-deepblack p-6 rounded-xl border border-gray-800">
-              <div className="h-24 bg-gray-700 rounded mb-4"></div>
+              <div className="h-8 w-48 bg-gray-700 rounded mb-4"></div>
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="h-20 bg-gray-700 rounded"></div>
@@ -194,7 +189,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
               </div>
             </div>
             <div className="bg-deepblack p-6 rounded-xl border border-gray-800">
-              <div className="h-24 bg-gray-700 rounded mb-4"></div>
+              <div className="h-8 w-48 bg-gray-700 rounded mb-4"></div>
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="h-20 bg-gray-700 rounded"></div>
@@ -209,6 +204,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
 
   return (
     <div className="min-h-screen bg-carbon text-offwhite relative overflow-hidden">
+      {/* Décor d'arrière-plan */}
       <div className="absolute inset-0 bg-gradient-to-b from-deepblack via-carbon to-black pointer-events-none" />
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-r from-crimson/20 via-gold/5 to-transparent opacity-30" />
       <div className="absolute -top-32 -right-32 w-96 h-96 bg-gold/10 rounded-full blur-3xl pointer-events-none" />
@@ -257,7 +253,13 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
         </motion.div>
 
         {/* Bouton Portefeuille */}
-        <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} onClick={onOpenWallet} className="mb-10 w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-gold/20 to-crimson/20 border border-gold/40 hover:border-gold hover:bg-gold/10 px-6 py-4 rounded-2xl transition group">
+        <motion.button 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.15 }} 
+          onClick={onOpenWallet} 
+          className="mb-10 w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-gold/20 to-crimson/20 border border-gold/40 hover:border-gold hover:bg-gold/10 px-6 py-4 rounded-2xl transition group"
+        >
           <Wallet className="w-6 h-6 text-gold" />
           <span className="text-gold font-bold text-lg">Mon Portefeuille</span>
           <ChevronRight className="w-5 h-5 text-gold group-hover:translate-x-1 transition-transform" />
@@ -391,6 +393,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
 
         {/* Historique et Watchlist */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Historique */}
           <motion.section initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
             <div className="flex items-center gap-3 mb-8">
               <div className="bg-crimson/20 p-2 rounded-xl"><Clock className="w-6 h-6 text-crimson" /></div>
@@ -398,8 +401,9 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
             </div>
             {history.length === 0 ? (
               <div className="bg-deepblack p-10 rounded-xl border border-gray-800 text-center">
-                <Film className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <History className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-400">Aucun historique pour le moment.</p>
+                <p className="text-gray-500 text-sm mt-2">Commencez à regarder pour voir vos films ici.</p>
               </div>
             ) : (
               <div className="space-y-5">
@@ -429,6 +433,7 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
             )}
           </motion.section>
 
+          {/* Watchlist */}
           <motion.section initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
             <div className="flex items-center gap-3 mb-8">
               <div className="bg-gold/20 p-2 rounded-xl"><Film className="w-6 h-6 text-gold" /></div>
@@ -436,8 +441,9 @@ const Profile = ({ user, onLogout, onBack, onOpenWallet }) => {
             </div>
             {watchlist.length === 0 ? (
               <div className="bg-deepblack p-10 rounded-xl border border-gray-800 text-center">
-                <Film className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <PlusCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-400">Votre liste est vide.</p>
+                <p className="text-gray-500 text-sm mt-2">Ajoutez des films et séries à votre liste.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-5">

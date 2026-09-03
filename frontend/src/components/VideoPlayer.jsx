@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   Play, Pause, Heart, MessageCircle, Share2, MoreHorizontal,
   Coins, ChevronDown, X, Send, ChevronUp, Volume2,
-  Maximize, Minimize, SkipBack, SkipForward, XCircle, ShoppingBag
+  Maximize, Minimize, SkipBack, SkipForward, XCircle, ShoppingBag,
+  Loader2
 } from 'lucide-react';
 import Hls from 'hls.js';
 import { motion } from 'framer-motion';
@@ -34,13 +35,20 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
   // ✅ Nouveaux états pour luminosité / volume
   const [brightness, setBrightness] = useState(100);
   const [overlayOpacity, setOverlayOpacity] = useState(0);
-  const [controlType, setControlType] = useState(null); // 'brightness' ou 'volume'
+  const [controlType, setControlType] = useState(null);
+
+  // ✅ Nouveaux états pour buffering et feedback de saut
+  const [buffering, setBuffering] = useState(false);
+  const [jumpFeedback, setJumpFeedback] = useState(null); // { direction: 'forward'|'backward', time: number }
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const mainRef = useRef(null);
   const hideControlsTimeout = useRef(null);
   const lastTap = useRef(0);
+  const lastTapX = useRef(0);
+  const lastTapY = useRef(0);
+  const jumpFeedbackTimeout = useRef(null);
 
   // ✅ Refs pour les gestes
   const touchStartX = useRef(0);
@@ -87,6 +95,26 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
       if (hls) hls.destroy();
     };
   }, [currentVideo?.url]);
+
+  // ✅ Gestion du buffering
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+
+    const handleWaiting = () => setBuffering(true);
+    const handlePlaying = () => setBuffering(false);
+    const handleCanPlay = () => setBuffering(false);
+
+    videoEl.addEventListener('waiting', handleWaiting);
+    videoEl.addEventListener('playing', handlePlaying);
+    videoEl.addEventListener('canplay', handleCanPlay);
+
+    return () => {
+      videoEl.removeEventListener('waiting', handleWaiting);
+      videoEl.removeEventListener('playing', handlePlaying);
+      videoEl.removeEventListener('canplay', handleCanPlay);
+    };
+  }, [currentIndex]); // Rebind when episode changes
 
   // Détection mobile / desktop
   useEffect(() => {
@@ -135,6 +163,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
     setProgress(0);
     setCurrentTime(0);
     setDuration(0);
+    setBuffering(false); // Reset buffering on episode change
   }, [currentVideo?.id, safeUser?.id]);
 
   // Plein écran
@@ -173,6 +202,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
       setCurrentIndex(index);
       setIsPlaying(true);
       setShowComments(false);
+      // ✅ Transition douce : on peut forcer la mise à jour de l'opacité ici
     }
   };
 
@@ -226,8 +256,18 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
     }
   };
 
+  // ✅ Fonction pour afficher le feedback de saut
+  const showJumpFeedback = (direction, seconds) => {
+    setJumpFeedback({ direction, time: seconds });
+    clearTimeout(jumpFeedbackTimeout.current);
+    jumpFeedbackTimeout.current = setTimeout(() => setJumpFeedback(null), 1000);
+  };
+
   const skip = (seconds) => {
-    if (videoRef.current) videoRef.current.currentTime += seconds;
+    if (videoRef.current) {
+      videoRef.current.currentTime += seconds;
+      showJumpFeedback(seconds > 0 ? 'forward' : 'backward', Math.abs(seconds));
+    }
   };
 
   const handleVolumeChange = (e) => {
@@ -323,22 +363,32 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
     setControlType(null);
   };
 
-  // ✅ Double tap pour avancer/reculer
+  // ✅ Double tap amélioré : vérifie que le mouvement entre les taps est faible
   const handleVideoTap = (e) => {
     const now = Date.now();
-    if (now - lastTap.current < 300) {
+    const currentX = e.clientX;
+    const currentY = e.clientY;
+    const distance = Math.sqrt((currentX - lastTapX.current) ** 2 + (currentY - lastTapY.current) ** 2);
+
+    if (now - lastTap.current < 300 && distance < 30) {
+      // Double tap confirmé
       if (videoRef.current) {
         const rect = videoRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
+        const x = currentX - rect.left;
         if (x < rect.width / 2) {
           videoRef.current.currentTime -= 10;
+          showJumpFeedback('backward', 10);
         } else {
           videoRef.current.currentTime += 10;
+          showJumpFeedback('forward', 10);
         }
         showControlsTemporarily();
       }
     }
+
     lastTap.current = now;
+    lastTapX.current = currentX;
+    lastTapY.current = currentY;
   };
 
   const handleLike = async () => {
@@ -432,8 +482,8 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
       className="fixed inset-0 bg-black z-50 flex flex-col outline-none"
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}      // ✅ Ajout
-      onTouchEnd={handleTouchEnd}        // ✅ Ajout
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onClick={() => setShowComments(false)}
     >
       {/* Boutons de sortie */}
@@ -473,7 +523,10 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
       {/* Conteneur scroll vertical */}
       <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-hide">
         {safeVideos.map((episode, index) => (
-          <div key={episode.id} className="h-full w-full snap-start relative flex items-center justify-center bg-black">
+          <div
+            key={episode.id}
+            className={`h-full w-full snap-start relative flex items-center justify-center bg-black transition-opacity duration-500 ${index === currentIndex ? 'opacity-100' : 'opacity-30'}`}
+          >
             {needsUnlock ? (
               <div className="flex flex-col items-center justify-center text-center p-6">
                 <Coins className="w-16 h-16 text-gold mb-4" />
@@ -511,19 +564,45 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
                 <p className="text-gray-400">La source de cette vidéo est introuvable ou non supportée.</p>
               </div>
             ) : (
-              <video
-                ref={index === currentIndex ? videoRef : null}
-                poster={episode.poster}
-                className="w-full h-full object-cover"
-                autoPlay={index === currentIndex}
-                loop={false}
-                controls={false}
-                onClick={handleVideoTap}
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-                onEnded={() => goNext()}
-                onError={() => setVideoError(true)}
-              />
+              <>
+                <video
+                  ref={index === currentIndex ? videoRef : null}
+                  poster={episode.poster}
+                  className="w-full h-full object-cover"
+                  autoPlay={index === currentIndex}
+                  loop={false}
+                  controls={false}
+                  onClick={handleVideoTap}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+                  onEnded={() => goNext()}
+                  onError={() => setVideoError(true)}
+                />
+                {/* ✅ Indicateur de buffering */}
+                {buffering && index === currentIndex && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="w-16 h-16 text-white animate-spin" />
+                  </div>
+                )}
+                {/* ✅ Feedback de saut */}
+                {jumpFeedback && index === currentIndex && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  >
+                    <div className="bg-black/70 text-white px-6 py-4 rounded-xl text-center">
+                      {jumpFeedback.direction === 'forward' ? (
+                        <SkipForward className="w-10 h-10 mx-auto" />
+                      ) : (
+                        <SkipBack className="w-10 h-10 mx-auto" />
+                      )}
+                      <p className="text-sm font-bold mt-2">{jumpFeedback.time} s</p>
+                    </div>
+                  </motion.div>
+                )}
+              </>
             )}
 
             {/* Overlay actions */}
