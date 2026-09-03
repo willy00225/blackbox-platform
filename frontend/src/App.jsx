@@ -250,10 +250,10 @@ function UserApp() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname + (selectedFilm?.id || '') + (showProfile ? '-profile' : '') + (showWallet ? '-wallet' : '')}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
+                initial={{ x: 300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -300, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               >
                 {showWallet ? (
                   <Wallet user={user} onCoinsUpdate={handleCoinsUpdate} />
@@ -432,41 +432,44 @@ function UserApp() {
         </>
       )}
 
-      {/* Barre d'onglets mobile (Bottom Navigation) - AMÉLIORÉE */}
+      {/* Barre d'onglets mobile - ULTRA NATIVE */}
       {user && !isPlaying && !showAuth && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-carbon/95 backdrop-blur-2xl border-t border-white/10 flex justify-around py-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
           <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={handleNavigateHome}
+            whileTap={{ scale: 0.85, boxShadow: '0px 2px 10px rgba(0,0,0,0.5)' }}
+            onClick={() => { if (navigator.vibrate) navigator.vibrate(10); handleNavigateHome(); }}
             className={`flex flex-col items-center p-2 transition-colors ${location.pathname === '/' ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}
           >
             <Home className="w-6 h-6" />
             <span className="text-xs">Accueil</span>
           </motion.button>
-          <motion.div whileTap={{ scale: 0.9 }}>
-            <Link to="/films" className={`flex flex-col items-center p-2 transition-colors ${location.pathname === '/films' ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}>
-              <Library className="w-6 h-6" />
-              <span className="text-xs">Films</span>
-            </Link>
-          </motion.div>
-          {/* ✅ Remplacement du lien par un bouton overlay */}
-          <motion.button 
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsSearchOpen(true)}
+          <motion.button
+            whileTap={{ scale: 0.85, boxShadow: '0px 2px 10px rgba(0,0,0,0.5)' }}
+            onClick={() => { if (navigator.vibrate) navigator.vibrate(10); navigate('/films'); }}
+            className={`flex flex-col items-center p-2 transition-colors ${location.pathname === '/films' ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}
+          >
+            <Library className="w-6 h-6" />
+            <span className="text-xs">Films</span>
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.85, boxShadow: '0px 2px 10px rgba(0,0,0,0.5)' }}
+            onClick={() => { if (navigator.vibrate) navigator.vibrate(10); setIsSearchOpen(true); }}
             className={`flex flex-col items-center p-2 transition-colors ${isSearchOpen ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}
           >
             <Search className="w-6 h-6" />
             <span className="text-xs">Recherche</span>
           </motion.button>
-          <motion.div whileTap={{ scale: 0.9 }}>
-            <Link to="/series" className={`flex flex-col items-center p-2 transition-colors ${location.pathname === '/series' ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}>
-              <Library className="w-6 h-6" />
-              <span className="text-xs">Séries</span>
-            </Link>
-          </motion.div>
           <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={handleShowProfile}
+            whileTap={{ scale: 0.85, boxShadow: '0px 2px 10px rgba(0,0,0,0.5)' }}
+            onClick={() => { if (navigator.vibrate) navigator.vibrate(10); navigate('/series'); }}
+            className={`flex flex-col items-center p-2 transition-colors ${location.pathname === '/series' ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}
+          >
+            <Library className="w-6 h-6" />
+            <span className="text-xs">Séries</span>
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.85, boxShadow: '0px 2px 10px rgba(0,0,0,0.5)' }}
+            onClick={() => { if (navigator.vibrate) navigator.vibrate(10); handleShowProfile(); }}
             className={`flex flex-col items-center p-2 transition-colors ${location.pathname === '/profile' || showProfile ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}
           >
             <User className="w-6 h-6" />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Home, Search, Library, User, Coins, LogOut } from 'lucide-react';
+import { Menu, X, Home, Search, Library, User, Coins, LogOut, Bell } from 'lucide-react'; // ✅ Bell importé
 
 const Navbar = ({ user, userCoins, onLogout, onProfileClick, onLogoClick, onSearchClick }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -82,7 +82,18 @@ const Navbar = ({ user, userCoins, onLogout, onProfileClick, onLogoClick, onSear
             >
               <Search className="w-6 h-6" />
             </button>
-            
+
+            {/* ✅ Bouton Cloche avec badge de notification */}
+            <button 
+              className="relative text-gray-300 hover:text-white transition"
+              aria-label="Notifications"
+            >
+              <Bell className="w-6 h-6" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-crimson rounded-full text-[10px] flex items-center justify-center text-white font-bold">
+                3
+              </span>
+            </button>
+
             <div className="flex items-center gap-1 bg-deepblack border border-gold/30 px-3 py-1 rounded-full">
               <Coins className="w-4 h-4 text-gold" />
               <span className="text-gold font-bold text-sm">{userCoins}</span>
@@ -108,7 +119,18 @@ const Navbar = ({ user, userCoins, onLogout, onProfileClick, onLogoClick, onSear
             >
               <Search className="w-6 h-6" />
             </button>
-            
+
+            {/* ✅ Bouton Cloche avec badge de notification */}
+            <button 
+              className="relative text-gray-300 hover:text-white transition"
+              aria-label="Notifications"
+            >
+              <Bell className="w-6 h-6" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-crimson rounded-full text-[10px] flex items-center justify-center text-white font-bold">
+                3
+              </span>
+            </button>
+
             <div className="flex items-center gap-1 bg-deepblack border border-gold/30 px-2 py-1 rounded-full">
               <Coins className="w-3 h-3 text-gold" />
               <span className="text-gold font-bold text-xs">{userCoins}</span>

@@ -4,9 +4,9 @@ import {
   Coins, ChevronDown, X, Send, ChevronUp, Volume2,
   Maximize, Minimize, SkipBack, SkipForward, XCircle, ShoppingBag
 } from 'lucide-react';
-import Hls from 'hls.js'; // ✅ AJOUTÉ
+import Hls from 'hls.js';
+import { motion } from 'framer-motion';
 
-// URL du Backend en dur pour la production
 const API_URL = 'https://blackbox-platform-production-7339.up.railway.app';
 
 const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialIndex = 0 }) => {
@@ -31,10 +31,22 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
   const [showAdModal, setShowAdModal] = useState(false);
   const [availableAd, setAvailableAd] = useState(null);
 
+  // ✅ Nouveaux états pour luminosité / volume
+  const [brightness, setBrightness] = useState(100);
+  const [overlayOpacity, setOverlayOpacity] = useState(0);
+  const [controlType, setControlType] = useState(null); // 'brightness' ou 'volume'
+
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const mainRef = useRef(null);
   const hideControlsTimeout = useRef(null);
+  const lastTap = useRef(0);
+
+  // ✅ Refs pour les gestes
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const touchStartBrightness = useRef(100);
+  const touchStartVolume = useRef(1);
 
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -48,10 +60,8 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
     const videoEl = videoRef.current;
     if (!videoEl || !currentVideo?.url) return;
 
-    // Nettoyage précédent (destruction HLS si existant)
     let hls = null;
 
-    // Si flux HLS (.m3u8)
     if (currentVideo.url.includes('.m3u8')) {
       if (Hls.isSupported()) {
         hls = new Hls();
@@ -60,22 +70,19 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           videoEl.play().catch(() => {});
         });
-      } 
-      // Fallback pour Safari / iOS (lecture native)
+      }
       else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
         videoEl.src = currentVideo.url;
         videoEl.addEventListener('loadedmetadata', () => {
           videoEl.play().catch(() => {});
         });
       }
-    } 
-    // Sinon MP4 classique
+    }
     else {
       videoEl.src = currentVideo.url;
       videoEl.play().catch(() => {});
     }
 
-    // Nettoyage mémoire à chaque changement de vidéo
     return () => {
       if (hls) hls.destroy();
     };
@@ -88,7 +95,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Focus automatique pour capter les touches clavier
+  // Focus automatique
   useEffect(() => {
     mainRef.current?.focus();
   }, []);
@@ -272,9 +279,67 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
     if (!isMobile) showControlsTemporarily();
   }, [isMobile, showControlsTemporarily]);
 
-  const handleTouchStart = useCallback(() => {
+  // ✅ Nouveau handleTouchStart pour luminosité/volume + affichage contrôles
+  const handleTouchStart = (e) => {
     if (isMobile) showControlsTemporarily();
-  }, [isMobile, showControlsTemporarily]);
+
+    if (e.touches && e.touches.length === 1) {
+      touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+      touchStartBrightness.current = brightness;
+      touchStartVolume.current = volume;
+    }
+  };
+
+  // ✅ Nouveau handleTouchMove
+  const handleTouchMove = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+
+    const screenWidth = window.innerWidth;
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
+
+    if (touchX < screenWidth / 2) {
+      // Luminosité
+      const deltaY = touchStartY.current - touchY;
+      const newBrightness = Math.max(0, Math.min(100, touchStartBrightness.current + (deltaY / screenWidth) * 200));
+      setBrightness(newBrightness);
+      setOverlayOpacity(0.7);
+      setControlType('brightness');
+    } else {
+      // Volume
+      const deltaY = touchStartY.current - touchY;
+      const newVolume = Math.max(0, Math.min(1, touchStartVolume.current + (deltaY / screenWidth) * 2));
+      setVolume(newVolume);
+      if (videoRef.current) videoRef.current.volume = newVolume;
+      setOverlayOpacity(0.7);
+      setControlType('volume');
+    }
+  };
+
+  // ✅ Nouveau handleTouchEnd
+  const handleTouchEnd = () => {
+    setOverlayOpacity(0);
+    setControlType(null);
+  };
+
+  // ✅ Double tap pour avancer/reculer
+  const handleVideoTap = (e) => {
+    const now = Date.now();
+    if (now - lastTap.current < 300) {
+      if (videoRef.current) {
+        const rect = videoRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        if (x < rect.width / 2) {
+          videoRef.current.currentTime -= 10;
+        } else {
+          videoRef.current.currentTime += 10;
+        }
+        showControlsTemporarily();
+      }
+    }
+    lastTap.current = now;
+  };
 
   const handleLike = async () => {
     if (!safeUser) {
@@ -357,12 +422,18 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
   const needsUnlock = currentVideo.coinsRequired > 0 && !hasUnlocked;
 
   return (
-    <div
+    <motion.div
       ref={mainRef}
       tabIndex={0}
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.5}
+      onDragEnd={(e, info) => { if (info.offset.y > 120) onExit(); }}
       className="fixed inset-0 bg-black z-50 flex flex-col outline-none"
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}      // ✅ Ajout
+      onTouchEnd={handleTouchEnd}        // ✅ Ajout
       onClick={() => setShowComments(false)}
     >
       {/* Boutons de sortie */}
@@ -447,7 +518,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
                 autoPlay={index === currentIndex}
                 loop={false}
                 controls={false}
-                onClick={togglePlay}
+                onClick={handleVideoTap}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
                 onEnded={() => goNext()}
@@ -578,6 +649,26 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
         ))}
       </div>
 
+      {/* ✅ Overlay Luminosité / Volume */}
+      <div className="absolute inset-0 z-[90] pointer-events-none flex items-center justify-center">
+        <div
+          className="bg-black/80 text-white px-6 py-4 rounded-xl text-center shadow-2xl"
+          style={{ opacity: overlayOpacity }}
+        >
+          {controlType === 'brightness' ? (
+            <div>
+              <span className="text-4xl">☀️</span>
+              <p className="text-lg font-bold mt-2">{Math.round(brightness)}%</p>
+            </div>
+          ) : (
+            <div>
+              <span className="text-4xl">🔊</span>
+              <p className="text-lg font-bold mt-2">{Math.round(volume * 100)}%</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Modale pub */}
       {showAdModal && availableAd && (
         <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center">
@@ -594,7 +685,7 @@ const VideoPlayer = ({ video, allVideos, userCoins, onUnlock, onExit, initialInd
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

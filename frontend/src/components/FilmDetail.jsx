@@ -110,8 +110,13 @@ const FilmDetail = ({ film, user, onBack, onPlay, onAddToList, onSelectEpisode }
         </button>
 
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Affiche */}
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="w-full md:w-1/3">
+          {/* Affiche avec effet de zoom */}
+          <motion.div
+            initial={{ opacity: 0, scale: 1.2 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="w-full md:w-1/3"
+          >
             <img src={film.poster} alt={film.title} className="w-full rounded-2xl shadow-2xl border border-gray-800" />
             {film.url?.includes('.m3u8') && (
               <div className="mt-2 flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-lg">
