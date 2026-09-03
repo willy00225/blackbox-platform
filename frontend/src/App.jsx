@@ -449,12 +449,15 @@ function UserApp() {
               <span className="text-xs">Films</span>
             </Link>
           </motion.div>
-          <motion.div whileTap={{ scale: 0.9 }}>
-            <Link to="/search" className={`flex flex-col items-center p-2 transition-colors ${location.pathname === '/search' ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}>
-              <Search className="w-6 h-6" />
-              <span className="text-xs">Recherche</span>
-            </Link>
-          </motion.div>
+          {/* ✅ Remplacement du lien par un bouton overlay */}
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsSearchOpen(true)}
+            className={`flex flex-col items-center p-2 transition-colors ${isSearchOpen ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}
+          >
+            <Search className="w-6 h-6" />
+            <span className="text-xs">Recherche</span>
+          </motion.button>
           <motion.div whileTap={{ scale: 0.9 }}>
             <Link to="/series" className={`flex flex-col items-center p-2 transition-colors ${location.pathname === '/series' ? 'text-gold' : 'text-gray-400 hover:text-gold'}`}>
               <Library className="w-6 h-6" />
