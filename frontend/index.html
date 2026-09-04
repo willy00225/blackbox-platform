@@ -29,16 +29,20 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <!-- ✅ Ajout d'un paramètre de version pour forcer le rechargement du bundle -->
+    <!-- Changez ?v=2 en ?v=3, ?v=4... à chaque déploiement majeur -->
+    <script type="module" src="/src/main.jsx?v=2"></script>
 
     <!-- ====== OUTIL DE DÉBOGAGE MOBILE (vConsole) ====== -->
-    <!-- À RETIRER PLUS TARD UNE FOIS LE PROBLÈME RÉSOLU -->
+    <!-- À DÉCOMMENTER UNIQUEMENT EN CAS DE PROBLÈME PERSISTANT -->
+    <!--
     <script src="https://unpkg.com/vconsole@3.15.1/dist/vconsole.min.js"></script>
     <script>
       window.addEventListener('load', function() {
         var vConsole = new VConsole();
       });
     </script>
+    -->
     <!-- ====== FIN DU SCRIPT DE DÉBOGAGE ====== -->
   </body>
 </html>

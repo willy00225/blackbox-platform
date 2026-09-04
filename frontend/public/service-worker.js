@@ -1,11 +1,12 @@
-const CACHE_NAME = 'blackbox-v1';
+const CACHE_NAME = 'blackbox-v2'; // ✅ Changez ce numéro à chaque mise à jour
 const urlsToCache = ['/', '/index.html', '/manifest.json'];
 
-// Installation du cache
+// Installation : mise en cache
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
   );
+  self.skipWaiting(); // ✅ Prend le contrôle immédiatement
 });
 
 // Activation : nettoyage des anciens caches
@@ -19,23 +20,35 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // ✅ Prend le contrôle des pages ouvertes
   );
 });
 
-// Récupération des données (Stratégie : API en réseau, fichiers en cache)
+// Stratégie de récupération améliorée
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  
+
+  // Pour les API : réseau d'abord, fallback cache
   if (event.request.url.includes('/api/')) {
-    // Pour les API, on va sur le réseau (pour avoir les pièces à jour)
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
-  } else {
-    // Pour les fichiers statiques, on utilise le cache d'abord
+  }
+  // Pour les fichiers statiques : stale-while-revalidate
+  else {
     event.respondWith(
-      caches.match(event.request).then((response) => response || fetch(event.request))
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          // Mise à jour du cache en arrière-plan
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          }
+          return networkResponse;
+        }).catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
+      })
     );
   }
 });
@@ -49,18 +62,16 @@ self.addEventListener('push', (event) => {
   });
 });
 
-// (Optionnel) Gestion du clic sur la notification
+// Clic sur la notification
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientList) => {
-      // Si un onglet est déjà ouvert, on le focus
       for (const client of clientList) {
         if (client.url.includes('/')) {
           return client.focus();
         }
       }
-      // Sinon on ouvre l'application
       if (clients.openWindow) {
         return clients.openWindow('/');
       }
